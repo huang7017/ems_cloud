@@ -1,0 +1,131 @@
+'use client';
+import Box from '@mui/material/Box';
+import Drawer from '@mui/material/Drawer';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import { useDispatch, useSelector } from "react-redux";
+import SidebarItems from './SidebarItems';
+import Logo from '../../../Shared/logo/Logo';
+
+import { actions } from '../../../../../store/Customizer/reducer';
+import Scrollbar from '../../../CustomScroll/Scrollbar';
+// import { Profile } from './SidebarProfile/Profile';
+import type { IState } from '../../../../../store/reducers';
+import type { MenuitemsType } from './types';
+
+const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
+  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up('lg'));
+  const customizer = useSelector((state: IState) => state.customizer);
+  const dispatch = useDispatch();
+  const theme = useTheme();
+  const toggleWidth =
+    customizer.isCollapse && !customizer.isSidebarHover
+      ? customizer.MiniSidebarWidth
+      : customizer.SidebarWidth;
+
+  const onHoverEnter = () => {
+    if (customizer.isCollapse) {
+      dispatch(actions.hoverSidebar(true));
+    }
+  };
+
+  const onHoverLeave = () => {
+    dispatch(actions.hoverSidebar(false));
+  };
+
+  if (lgUp) {
+    return (
+      <Box
+        sx={{
+          zIndex: 100,
+          width: toggleWidth,
+          flexShrink: 0,
+          ...(customizer.isCollapse && {
+            position: 'absolute',
+          }),
+        }}
+      >
+        {/* ------------------------------------------- */}
+        {/* Sidebar for desktop */}
+        {/* ------------------------------------------- */}
+        <Drawer
+          anchor="left"
+          open
+          onMouseEnter={onHoverEnter}
+          onMouseLeave={onHoverLeave}
+          variant="permanent"
+          PaperProps={{
+            sx: {
+              transition: theme.transitions.create('width', {
+                duration: theme.transitions.duration.shortest,
+              }),
+              width: toggleWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+        >
+          {/* ------------------------------------------- */}
+          {/* Sidebar Box */}
+          {/* ------------------------------------------- */}
+          <Box
+            sx={{
+              height: '100%',
+            }}
+          >
+            {/* ------------------------------------------- */}
+            {/* Logo */}
+            {/* ------------------------------------------- */}
+            <Box px={3}>
+              <Logo />
+            </Box>
+            <Scrollbar sx={{ height: 'calc(100% - 190px)' }}>
+              <></>
+              {/* ------------------------------------------- */}
+              {/* Sidebar Items */}
+              {/* ------------------------------------------- */}
+              <SidebarItems menuitems={menuitems} lng={lng} />
+            </Scrollbar>
+            {/* <Profile /> */}
+          </Box>
+        </Drawer>
+      </Box>
+    );
+  }
+
+
+  return (
+    <Drawer
+    
+      anchor="left"
+      open={customizer.isMobileSidebar}
+      onClose={() => dispatch(actions.toggleMobileSidebar())}
+      variant="temporary"
+      PaperProps={{
+        sx: {
+          width: customizer.SidebarWidth,
+
+          // backgroundColor:
+          //   customizer.activeMode === 'dark'
+          //     ? customizer.darkBackground900
+          //     : customizer.activeSidebarBg,
+          // color: customizer.activeSidebarBg === '#ffffff' ? '' : 'white',
+          border: '0 !important',
+          boxShadow: (theme) => theme.shadows[8],
+        },
+      }}
+    >
+      {/* ------------------------------------------- */}
+      {/* Logo */}
+      {/* ------------------------------------------- */}
+      <Box px={2}>
+        <Logo />
+      </Box>
+      {/* ------------------------------------------- */}
+      {/* Sidebar For Mobile */}
+      {/* ------------------------------------------- */}
+      <SidebarItems menuitems={menuitems} lng={lng} />
+    </Drawer>
+  );
+};
+
+export default Sidebar;
