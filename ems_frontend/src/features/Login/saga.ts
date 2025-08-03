@@ -3,22 +3,24 @@ import { actions } from "./reducer";
 import type { authLoginRequest, authLoginResponse } from "./types";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
-import { fetchAuthLoginData } from "../../../api/auth";
-
+import { fetchAuthLoginData } from "../../api/auth";
 
 const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
   try {
     yield put(actions.setLoading(true));
-    const data: authLoginResponse = yield call(
-      fetchAuthLoginData,
-      action.payload
-    );
+    // const data: authLoginResponse = yield call(
+    //   fetchAuthLoginData,
+    //   action.payload
+    // );
 
-    if (data.success) {
-      Cookies.set("accessToken", data.jwt);
-      Cookies.set("name", encodeURIComponent(data.name));
-      yield (window.location.href = "/");
-    }
+    // console.log(data);
+    // if (data.success) {
+    // Cookies.set("accessToken", data.jwt);
+    // Cookies.set("name", encodeURIComponent(data.name));
+    Cookies.set("accessToken", "1234567890");
+    Cookies.set("name", encodeURIComponent("John Doe"));
+    yield (window.location.href = "/");
+    // }
   } catch (error) {
     console.error(error);
   }

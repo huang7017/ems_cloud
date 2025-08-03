@@ -1,20 +1,26 @@
-'use client';
-import Box from '@mui/material/Box';
-import Drawer from '@mui/material/Drawer';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
+"use client";
+import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
-import SidebarItems from './SidebarItems';
-import Logo from '../../../Shared/logo/Logo';
+import SidebarItems from "./SidebarItems";
+import Logo from "../../../Shared/logo/Logo";
 
-import { actions } from '../../../../../store/Customizer/reducer';
-import Scrollbar from '../../../CustomScroll/Scrollbar';
+import { actions } from "../../../../../store/Customizer/reducer";
+import Scrollbar from "../../../CustomScroll/Scrollbar";
 // import { Profile } from './SidebarProfile/Profile';
-import type { IState } from '../../../../../store/reducers';
-import type { MenuitemsType } from './types';
+import type { IState } from "../../../../../store/reducers";
+import type { MenuitemsType } from "./types";
 
-const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
-  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up('lg'));
+const Sidebar = ({
+  menuitems,
+  lng,
+}: {
+  menuitems: MenuitemsType[];
+  lng: string;
+}) => {
+  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
   const customizer = useSelector((state: IState) => state.customizer);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -41,7 +47,7 @@ const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
           width: toggleWidth,
           flexShrink: 0,
           ...(customizer.isCollapse && {
-            position: 'absolute',
+            position: "absolute",
           }),
         }}
       >
@@ -56,11 +62,11 @@ const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
           variant="permanent"
           PaperProps={{
             sx: {
-              transition: theme.transitions.create('width', {
+              transition: theme.transitions.create("width", {
                 duration: theme.transitions.duration.shortest,
               }),
               width: toggleWidth,
-              boxSizing: 'border-box',
+              boxSizing: "border-box",
             },
           }}
         >
@@ -69,16 +75,18 @@ const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
           {/* ------------------------------------------- */}
           <Box
             sx={{
-              height: '100%',
+              height: "100%",
             }}
           >
             {/* ------------------------------------------- */}
             {/* Logo */}
             {/* ------------------------------------------- */}
-            <Box px={3}>
+            <Box
+              sx={{ display: "flex", justifyContent: "center", width: "100%" }}
+            >
               <Logo />
             </Box>
-            <Scrollbar sx={{ height: 'calc(100% - 190px)' }}>
+            <Scrollbar sx={{ height: "calc(100% - 190px)" }}>
               <></>
               {/* ------------------------------------------- */}
               {/* Sidebar Items */}
@@ -92,10 +100,8 @@ const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
     );
   }
 
-
   return (
     <Drawer
-    
       anchor="left"
       open={customizer.isMobileSidebar}
       onClose={() => dispatch(actions.toggleMobileSidebar())}
@@ -109,7 +115,7 @@ const Sidebar = ({menuitems,lng}:{menuitems:MenuitemsType[],lng:string}) => {
           //     ? customizer.darkBackground900
           //     : customizer.activeSidebarBg,
           // color: customizer.activeSidebarBg === '#ffffff' ? '' : 'white',
-          border: '0 !important',
+          border: "0 !important",
           boxShadow: (theme) => theme.shadows[8],
         },
       }}
