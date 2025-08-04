@@ -1,6 +1,19 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Tabs, Tab, Paper, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Paper,
+  Button,
+  TextField,
+} from "@mui/material";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import SearchIcon from "@mui/icons-material/Search";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import BadgeIcon from "@mui/icons-material/Badge";
+
 import { useDispatch, useSelector } from "react-redux";
 import { actions } from "./reducer";
 import {
@@ -77,7 +90,7 @@ const UserManagementPage: React.FC = () => {
     <Box
       sx={{
         width: "100%",
-        minHeight: "100vh",
+        minHeight: "100%",
         p: { xs: 1, sm: 2, md: 3 },
         boxSizing: "border-box",
         display: "flex",
@@ -91,22 +104,51 @@ const UserManagementPage: React.FC = () => {
           alignItems: "center",
           mb: { xs: 2, sm: 3 },
           flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 2, sm: 0 },
+          gap: { xs: 1, sm: 0 },
         }}
       >
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            fontSize: {
-              xs: "1.25rem",
-              sm: "1.5rem",
-            },
-            textAlign: { xs: "center", sm: "left" },
-          }}
-        >
-          用戶權限管理
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <AdminPanelSettingsIcon sx={{ fontSize: "2rem" }} />
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontSize: {
+                xs: "1.25rem",
+                sm: "1.5rem",
+              },
+              textAlign: { xs: "center", sm: "left" },
+            }}
+          >
+            用戶與角色權限管理
+          </Typography>
+        </Box>
+
+        {/* Search Field - Only show for Users tab */}
+        {tabValue === 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              maxWidth: { xs: "100%", sm: 300 },
+              minWidth: { xs: "auto", sm: 200 },
+              width: "100%",
+            }}
+          >
+            <TextField
+              placeholder="搜尋用戶..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+                ),
+              }}
+              sx={{ flex: 1 }}
+              size="small"
+            />
+          </Box>
+        )}
 
         <Box
           sx={{
@@ -124,6 +166,7 @@ const UserManagementPage: React.FC = () => {
               sx={{
                 display: { xs: "none", sm: "flex" },
               }}
+              startIcon={<PersonAddIcon />}
             >
               新增用戶
             </Button>
@@ -136,6 +179,7 @@ const UserManagementPage: React.FC = () => {
               sx={{
                 display: { xs: "none", sm: "flex" },
               }}
+              startIcon={<BadgeIcon />}
             >
               新增角色
             </Button>
@@ -148,16 +192,29 @@ const UserManagementPage: React.FC = () => {
             display: { xs: "flex", sm: "none" },
             gap: 1,
             justifyContent: "center",
-            mt: 2,
+            width: "100%",
           }}
         >
           {tabValue === 0 && (
-            <Button variant="contained" size="small" onClick={handleCreateUser}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleCreateUser}
+              startIcon={<PersonAddIcon />}
+              fullWidth
+            >
               新增用戶
             </Button>
           )}
           {tabValue === 1 && (
-            <Button variant="contained" size="small" onClick={handleCreateRole}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleCreateRole}
+              startIcon={<BadgeIcon />}
+              sx={{ width: "100%" }}
+              fullWidth
+            >
               新增角色
             </Button>
           )}
@@ -194,12 +251,7 @@ const UserManagementPage: React.FC = () => {
 
         <Box sx={{ flex: 1, overflow: "auto" }}>
           <TabPanel value={tabValue} index={0}>
-            <UserManagementTab
-              users={users}
-              searchTerm={searchTerm}
-              onSearchChange={handleSearchChange}
-              onEditUser={handleEditUser}
-            />
+            <UserManagementTab users={users} onEditUser={handleEditUser} />
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>

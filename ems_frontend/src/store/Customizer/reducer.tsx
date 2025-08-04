@@ -23,7 +23,7 @@ const initialState: StateType = {
   activeTheme: "BLUE_THEME", // BLUE_THEME, GREEN_THEME, BLACK_THEME, PURPLE_THEME, ORANGE_THEME
   SidebarWidth: 264,
   MiniSidebarWidth: 64,
-  TopbarHeight: 70,
+  TopbarHeight: 56,
   isLayout: "boxed", // This can be full or boxed
   isCollapse: true, // to make sidebar Mini by default
   isSidebarHover: false,

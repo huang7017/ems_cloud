@@ -136,7 +136,11 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
       <Page>
         <Header />
         <Box
-          sx={{ minHeight: "calc(100vh - 120px)", backgroundColor: "#f1f5f9" }}
+          sx={{
+            minHeight: "calc(100vh - 56px)",
+            backgroundColor: "#f1f5f9",
+            borderRadius: "0",
+          }}
         >
           <Routes>
             <Route path="/" element={<HomePage />} />

@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Box,
-  TextField,
   Table,
   TableBody,
   TableCell,
@@ -14,22 +13,17 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { User } from "../types";
 
 interface UserManagementTabProps {
   users: User[];
-  searchTerm: string;
-  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onEditUser: (user: User) => void;
 }
 
 const UserManagementTab: React.FC<UserManagementTabProps> = ({
   users,
-  searchTerm,
-  onSearchChange,
   onEditUser,
 }) => {
   const getStatusColor = (status: string) => {
@@ -42,40 +36,6 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
 
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Search Section */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          mb: 3,
-          flexShrink: 0,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            maxWidth: { xs: "100%", sm: 400 },
-            minWidth: { xs: "auto", sm: 200 },
-            width: "100%",
-          }}
-        >
-          <TextField
-            placeholder="搜尋用戶..."
-            value={searchTerm}
-            onChange={onSearchChange}
-            InputProps={{
-              startAdornment: (
-                <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
-              ),
-            }}
-            sx={{ flex: 1 }}
-            size="small"
-          />
-        </Box>
-      </Box>
-
       {/* Users List Section */}
       <Box sx={{ flex: 1, overflow: "auto" }}>
         {/* Desktop Table View */}

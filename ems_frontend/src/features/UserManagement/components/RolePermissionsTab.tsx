@@ -45,14 +45,11 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
             role.permissions
           );
           return (
-            <Paper
+            <Box
               key={role.id}
               sx={{
                 mb: 3,
-                p: { xs: 2, sm: 3 },
                 overflow: "hidden",
-                boxShadow: { xs: 1, sm: 2 },
-                borderRadius: 2,
               }}
             >
               <Box
@@ -62,10 +59,7 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
                   justifyContent: "space-between",
                   alignItems: { xs: "stretch", sm: "center" },
                   gap: { xs: 1, sm: 0 },
-                  mb: 3,
                   pb: 2,
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
                 }}
               >
                 <Typography
@@ -106,11 +100,7 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
                         flex: 1,
                         minWidth: { xs: "100%", md: "auto" },
                         p: { xs: 2, sm: 2 },
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        backgroundColor: "background.paper",
-                        boxShadow: 1,
+                        backgroundColor: "#F8FAFC",
                       }}
                     >
                       <Typography
@@ -124,7 +114,7 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
                           fontWeight: "bold",
                           mb: 2,
                           color: "text.primary",
-                          textAlign: { xs: "left", md: "center" },
+                          textAlign: "left",
                         }}
                       >
                         {category}
@@ -176,7 +166,7 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
                   )
                 )}
               </Box>
-            </Paper>
+            </Box>
           );
         })}
       </Box>
