@@ -6,6 +6,7 @@ import rootReducer from "./reducers";
 import { rootSaga as authSaga } from "../features/Login/saga";
 import { rootSaga as homeSaga } from "../features/Home/saga";
 import { rootSaga as userManagementSaga } from "../features/Settings/UserManagement/saga";
+import { pageManagementSaga } from "../features/Settings/PageManagement/saga";
 const sagaMiddleware = createSagaMiddleware();
 
 const store = configureStore({
@@ -16,5 +17,6 @@ const store = configureStore({
 sagaMiddleware.run(authSaga);
 sagaMiddleware.run(homeSaga);
 sagaMiddleware.run(userManagementSaga);
+sagaMiddleware.run(pageManagementSaga);
 
 export default store;

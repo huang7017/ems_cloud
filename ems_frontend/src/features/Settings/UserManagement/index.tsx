@@ -8,8 +8,9 @@ import {
   Paper,
   Button,
   TextField,
+  InputAdornment,
 } from "@mui/material";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -103,129 +104,84 @@ const UserManagementPage: React.FC<PageProps> = ({ lng }) => {
         flexDirection: "column",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: { xs: 2, sm: 3 },
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1, sm: 0 },
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <AdminPanelSettingsIcon sx={{ fontSize: "2rem" }} />
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontSize: {
-                xs: "1.25rem",
-                sm: "1.5rem",
-              },
-              textAlign: { xs: "center", sm: "left" },
-            }}
-          >
-            {translate("user_management")}
-          </Typography>
-        </Box>
-
-        {/* Search Field - Only show for Users tab */}
-        {tabValue === 0 && (
+      {/* Header with Search and Actions */}
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+            alignItems: { xs: "stretch", sm: "center" },
+          }}
+        >
+          {/* Title Section */}
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
-              maxWidth: { xs: "100%", sm: 300 },
-              minWidth: { xs: "auto", sm: 200 },
-              width: "100%",
+              gap: 2,
+              minWidth: { sm: "auto" },
             }}
           >
+            <PeopleIcon sx={{ fontSize: 32, color: "primary.main" }} />
+            <Box>
+              <Typography variant="h5" component="h1">
+                {translate("user_management")}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {translate("manage_user_permissions")}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Spacer to push search to center */}
+          <Box sx={{ flex: 1, display: { xs: "none", sm: "block" } }} />
+
+          {/* Search Bar - Only show for Users tab */}
+          {tabValue === 0 && (
             <TextField
               placeholder={translate("search_users")}
               value={searchTerm}
               onChange={handleSearchChange}
               InputProps={{
                 startAdornment: (
-                  <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
                 ),
               }}
-              sx={{ flex: 1 }}
-              size="small"
+              sx={{
+                width: { xs: "100%", sm: 250 },
+                minWidth: { sm: 200 },
+              }}
             />
+          )}
+
+          {/* Add Button */}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {tabValue === 0 && (
+              <Button
+                variant="contained"
+                startIcon={<PersonAddIcon />}
+                onClick={handleCreateUser}
+                sx={{ minWidth: { xs: "100%", sm: "auto" } }}
+              >
+                {translate("add_user")}
+              </Button>
+            )}
+            {tabValue === 1 && (
+              <Button
+                variant="contained"
+                startIcon={<BadgeIcon />}
+                onClick={handleCreateRole}
+                sx={{ minWidth: { xs: "100%", sm: "auto" } }}
+              >
+                {translate("add_role")}
+              </Button>
+            )}
           </Box>
-        )}
-
-        <Box
-          sx={{
-            display: "flex",
-            gap: 1,
-            flexDirection: { xs: "row", sm: "row" },
-          }}
-        >
-          {/* Show buttons based on active tab */}
-          {tabValue === 0 && (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleCreateUser}
-              sx={{
-                display: { xs: "none", sm: "flex" },
-              }}
-              startIcon={<PersonAddIcon />}
-            >
-              {translate("add_user")}
-            </Button>
-          )}
-          {tabValue === 1 && (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleCreateRole}
-              sx={{
-                display: { xs: "none", sm: "flex" },
-              }}
-              startIcon={<BadgeIcon />}
-            >
-              {translate("add_role")}
-            </Button>
-          )}
         </Box>
-
-        {/* Mobile buttons */}
-        <Box
-          sx={{
-            display: { xs: "flex", sm: "none" },
-            gap: 1,
-            justifyContent: "center",
-            width: "100%",
-          }}
-        >
-          {tabValue === 0 && (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleCreateUser}
-              startIcon={<PersonAddIcon />}
-              fullWidth
-            >
-              {translate("add_user")}
-            </Button>
-          )}
-          {tabValue === 1 && (
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleCreateRole}
-              startIcon={<BadgeIcon />}
-              sx={{ width: "100%" }}
-              fullWidth
-            >
-              {translate("add_role")}
-            </Button>
-          )}
-        </Box>
-      </Box>
+      </Paper>
 
       <Paper
         sx={{

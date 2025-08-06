@@ -5,6 +5,7 @@ import { reducer as AuthReducer } from "../features/Login/reducer";
 import { reducer as UtilReducer } from "../features/Util/reducer";
 import { reducer as HomeReducer } from "../features/Home/reducer";
 import { reducer as UserManagementReducer } from "../features/Settings/UserManagement/reducer";
+import { default as PageManagementReducer } from "../features/Settings/PageManagement/reducer";
 
 const rootReducer = combineReducers({
   auth: AuthReducer,
@@ -12,6 +13,7 @@ const rootReducer = combineReducers({
   customizer: CustomizerReducer,
   home: HomeReducer,
   userManagement: UserManagementReducer,
+  pageManagement: PageManagementReducer,
 });
 
 export default rootReducer;

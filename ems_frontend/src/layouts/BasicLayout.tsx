@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import Sidebar from "../lib/components/Layout/Vertical/sidebar/Sidebar";
 import Header from "../lib/components/Layout/Vertical//header/Header";
 import { Box } from "@mui/material";
-import { Main, Page, Container } from "../lib/components/Layout/Wrapper";
+import { Main, Page } from "../lib/components/Layout/Wrapper";
 import type { MenuitemsType } from "../lib/components/Layout/Vertical/sidebar/types";
 import { getIcon } from "../lib/components/Icon/iconMapper";
 import type { IState } from "../store/reducers";
@@ -18,6 +18,10 @@ const HomePage = React.lazy(() => import("../features/Home/index"));
 
 const UserManagementPage = React.lazy(
   () => import("../features/Settings/UserManagement/index")
+);
+
+const PageManagementPage = React.lazy(
+  () => import("../features/Settings/PageManagement/index")
 );
 
 // ==================
@@ -106,6 +110,13 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
       url: "/user-management",
       icon: "PeopleIcon",
     },
+    {
+      id: 4,
+      parent: 2,
+      title: "Page Management",
+      url: "/page-management",
+      icon: "PagesIcon",
+    },
   ]);
 
   return (
@@ -125,6 +136,10 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
             <Route
               path="/settings/user-management"
               element={<UserManagementPage lng={currentLanguage} />}
+            />
+            <Route
+              path="/settings/page-management"
+              element={<PageManagementPage lng={currentLanguage} />}
             />
           </Routes>
         </Box>

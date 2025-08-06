@@ -75,21 +75,10 @@ export default function NavCollapse({
     });
   }, [pathname, menu.children]);
 
-  // Check if current path matches this menu or any of its children
+  // Check if current path matches this menu exactly (not its children)
   const isMenuActive = () => {
-    // Check if current pathname matches this menu's href exactly
-    if (pathname === menu.href) {
-      return true;
-    }
-
-    // Check if any child menu matches the current pathname
-    if (menu.children) {
-      return menu.children.some(
-        (child: NavGroupProps) => child.href === pathname
-      );
-    }
-
-    return false;
+    // Only return true if current pathname matches this menu's href exactly
+    return pathname === menu.href;
   };
 
   const ListItemStyled = styled(ListItemButton)(() => ({

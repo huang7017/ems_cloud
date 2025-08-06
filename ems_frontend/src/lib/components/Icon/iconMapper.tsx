@@ -11,6 +11,7 @@ import PolicyIcon from "@mui/icons-material/Policy";
 import PeopleIcon from "@mui/icons-material/People";
 import StoreIcon from "@mui/icons-material/Store";
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
+import PagesIcon from "@mui/icons-material/Pages";
 type IconName =
   | "HomeIcon"
   | "SettingsIcon"
@@ -23,7 +24,8 @@ type IconName =
   | "PolicyIcon"
   | "PeopleIcon"
   | "StoreIcon"
-  | "PointOfSaleIcon";
+  | "PointOfSaleIcon"
+  | "PagesIcon";
 
 export const getIcon = (iconName: string): React.ReactNode => {
   switch (iconName) {
@@ -51,6 +53,8 @@ export const getIcon = (iconName: string): React.ReactNode => {
       return <StoreIcon />;
     case "PointOfSaleIcon":
       return <PointOfSaleIcon />;
+    case "PagesIcon":
+      return <PagesIcon />;
     default:
       return <HomeIcon />;
   }
