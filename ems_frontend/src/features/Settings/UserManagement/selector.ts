@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
-import type { IState } from "../../store/reducers";
+import type { IState } from "../../../store/reducers";
 import type { User } from "./types";
 
 // Base selectors

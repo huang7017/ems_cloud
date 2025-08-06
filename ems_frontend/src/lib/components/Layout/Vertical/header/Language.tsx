@@ -1,34 +1,34 @@
-'use client';
-import React from 'react';
-import { Avatar, IconButton, Menu, MenuItem, Typography } from '@mui/material';
-import { useSelector, useDispatch } from 'react-redux';
-import { actions } from '../../../../../store/Customizer/reducer';
-import { Stack } from '@mui/system';
-// import { useTranslation } from '../../../../../helper/i18n/client';
-import { useEffect } from 'react';
-import type { IState } from '../../../../../store/reducers';
+"use client";
+import React from "react";
+import { Avatar, IconButton, Menu, MenuItem, Typography } from "@mui/material";
+import { useSelector, useDispatch } from "react-redux";
+import { actions } from "../../../../../store/Customizer/reducer";
+import { Stack } from "@mui/system";
+import { setLanguage } from "../../../../../helper/i18n";
+import { useEffect } from "react";
+import type { IState } from "../../../../../store/reducers";
 
 const Languages = [
   {
-    flagname: 'English (UK)',
+    flagname: "English (UK)",
     icon: "/images/flag/icon-flag-en.svg",
-    value: 'en',
+    value: "en",
   },
   {
-    flagname: '中国人 (Chinese)',
+    flagname: "中国人 (Chinese)",
     icon: "/images/flag/icon-flag-cn.svg",
-    value: 'ch',
+    value: "ch",
   },
   {
-    flagname: 'français (French)',
+    flagname: "français (French)",
     icon: "/images/flag/icon-flag-fr.svg",
-    value: 'fr',
+    value: "fr",
   },
 
   {
-    flagname: 'عربي (Arabic)',
+    flagname: "عربي (Arabic)",
     icon: "/images/flag/icon-flag-sa.svg",
-    value: 'ar',
+    value: "ar",
   },
 ];
 
@@ -38,7 +38,8 @@ const Language = () => {
   const open = Boolean(anchorEl);
   const customizer = useSelector((state: IState) => state.customizer);
   const currentLang =
-    Languages.find((_lang) => _lang.value === customizer.isLanguage) || Languages[1];
+    Languages.find((_lang) => _lang.value === customizer.isLanguage) ||
+    Languages[1];
   // const { i18n } = useTranslation("common");
   const handleClick = (event: any) => {
     setAnchorEl(event.currentTarget);
@@ -47,21 +48,28 @@ const Language = () => {
     setAnchorEl(null);
   };
   useEffect(() => {
-    // i18n.changeLanguage(customizer.isLanguage);
+    // 當語言改變時，同時更新localStorage
+    if (customizer.isLanguage) {
+      setLanguage(customizer.isLanguage);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [customizer.isLanguage]);
 
   return (
     <>
       <IconButton
         aria-label="more"
         id="long-button"
-        aria-controls={open ? 'long-menu' : undefined}
-        aria-expanded={open ? 'true' : undefined}
+        aria-controls={open ? "long-menu" : undefined}
+        aria-expanded={open ? "true" : undefined}
         aria-haspopup="true"
         onClick={handleClick}
       >
-        <Avatar src={currentLang.icon} alt={currentLang.value} sx={{ width: 20, height: 20 }} />
+        <Avatar
+          src={currentLang.icon}
+          alt={currentLang.value}
+          sx={{ width: 20, height: 20 }}
+        />
       </IconButton>
       <Menu
         id="long-menu"
@@ -69,8 +77,8 @@ const Language = () => {
         open={open}
         onClose={handleClose}
         sx={{
-          '& .MuiMenu-paper': {
-            width: '200px',
+          "& .MuiMenu-paper": {
+            width: "200px",
           },
         }}
       >
@@ -81,7 +89,11 @@ const Language = () => {
             onClick={() => dispatch(actions.setLanguage(option.value))}
           >
             <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar src={option.icon} alt={option.icon} sx={{ width: 20, height: 20 }} />
+              <Avatar
+                src={option.icon}
+                alt={option.icon}
+                sx={{ width: 20, height: 20 }}
+              />
               <Typography> {option.flagname}</Typography>
             </Stack>
           </MenuItem>

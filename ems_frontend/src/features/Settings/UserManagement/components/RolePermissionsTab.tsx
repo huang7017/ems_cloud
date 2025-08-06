@@ -18,12 +18,14 @@ interface RolePermissionsTabProps {
     permissionId: string,
     checked: boolean
   ) => void;
+  translate: (key: string) => string;
 }
 
 const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
   roles,
   onEditRole,
   onPermissionChange,
+  translate,
 }) => {
   const groupPermissionsByCategory = (permissions: Permission[]) => {
     const grouped: Record<string, Permission[]> = {};
@@ -81,7 +83,7 @@ const RolePermissionsTab: React.FC<RolePermissionsTabProps> = ({
                     minWidth: { xs: "100%", sm: "auto" },
                   }}
                 >
-                  編輯
+                  {translate("edit")}
                 </Button>
               </Box>
 

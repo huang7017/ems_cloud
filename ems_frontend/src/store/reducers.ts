@@ -3,19 +3,13 @@ import { combineReducers } from "redux";
 import { reducer as CustomizerReducer } from "./Customizer/reducer";
 import { reducer as AuthReducer } from "../features/Login/reducer";
 import { reducer as UtilReducer } from "../features/Util/reducer";
-import { reducer as TemperatureReducer } from "../features/Settings/Temperature/reducer";
-import { reducer as VRFReducer } from "../features/Settings/VRF/reducer";
-import { reducer as MeterReducer } from "../features/Settings/Meters/reducer";
 import { reducer as HomeReducer } from "../features/Home/reducer";
-import { reducer as UserManagementReducer } from "../features/UserManagement/reducer";
+import { reducer as UserManagementReducer } from "../features/Settings/UserManagement/reducer";
 
 const rootReducer = combineReducers({
   auth: AuthReducer,
   util: UtilReducer,
   customizer: CustomizerReducer,
-  temperature: TemperatureReducer,
-  vrf: VRFReducer,
-  meter: MeterReducer,
   home: HomeReducer,
   userManagement: UserManagementReducer,
 });

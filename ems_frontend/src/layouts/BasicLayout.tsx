@@ -2,26 +2,22 @@
 
 import React from "react";
 import { Route, Routes } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Sidebar from "../lib/components/Layout/Vertical/sidebar/Sidebar";
 import Header from "../lib/components/Layout/Vertical//header/Header";
 import { Box } from "@mui/material";
 import { Main, Page, Container } from "../lib/components/Layout/Wrapper";
 import type { MenuitemsType } from "../lib/components/Layout/Vertical/sidebar/types";
 import { getIcon } from "../lib/components/Icon/iconMapper";
+import type { IState } from "../store/reducers";
 
 // ==================
 // 路由组件
 // ==================
 const HomePage = React.lazy(() => import("../features/Home/index"));
-const TemperaturePage = React.lazy(
-  () => import("../features/Settings/Temperature/index")
-);
-const VRFPage = React.lazy(() => import("../features/Settings/VRF/index"));
-const MetersPage = React.lazy(
-  () => import("../features/Settings/Meters/index")
-);
+
 const UserManagementPage = React.lazy(
-  () => import("../features/UserManagement/index")
+  () => import("../features/Settings/UserManagement/index")
 );
 
 // ==================
@@ -85,6 +81,9 @@ const createSidebarStructure = (
   return Array.from(itemMap.values()).filter((item) => !item.parent);
 };
 const BasicLayout: React.FC<BasicLayoutProps> = () => {
+  const customizer = useSelector((state: IState) => state.customizer);
+  const currentLanguage = customizer.isLanguage || "en";
+
   const sideBar: MenuitemsType[] = createSidebarStructure([
     {
       id: 1,
@@ -103,27 +102,6 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
     {
       id: 3,
       parent: 2,
-      title: "Temperature",
-      url: "/temperature",
-      icon: "BiotechIcon",
-    },
-    {
-      id: 4,
-      parent: 2,
-      title: "VRF",
-      url: "/vrf",
-      icon: "BiotechIcon",
-    },
-    {
-      id: 5,
-      parent: 2,
-      title: "Meters",
-      url: "/meters",
-      icon: "BiotechIcon",
-    },
-    {
-      id: 6,
-      parent: 0,
       title: "User Management",
       url: "/user-management",
       icon: "PeopleIcon",
@@ -132,7 +110,7 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
 
   return (
     <Main>
-      <Sidebar menuitems={sideBar} lng={"en"} />
+      <Sidebar menuitems={sideBar} lng={currentLanguage} />
       <Page>
         <Header />
         <Box
@@ -145,15 +123,9 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route
-              path="/settings/temperature"
-              element={<TemperaturePage lng={"en"} />}
+              path="/settings/user-management"
+              element={<UserManagementPage lng={currentLanguage} />}
             />
-            <Route path="/settings/vrf" element={<VRFPage lng={"en"} />} />
-            <Route
-              path="/settings/meters"
-              element={<MetersPage lng={"en"} />}
-            />
-            <Route path="/user-management" element={<UserManagementPage />} />
           </Routes>
         </Box>
       </Page>

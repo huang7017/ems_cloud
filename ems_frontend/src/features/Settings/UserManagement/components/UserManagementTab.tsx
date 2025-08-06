@@ -20,11 +20,13 @@ import type { User } from "../types";
 interface UserManagementTabProps {
   users: User[];
   onEditUser: (user: User) => void;
+  translate: (key: string) => string;
 }
 
 const UserManagementTab: React.FC<UserManagementTabProps> = ({
   users,
   onEditUser,
+  translate,
 }) => {
   const getStatusColor = (status: string) => {
     return status === "enabled" ? "success" : "default";
@@ -50,12 +52,12 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>用戶名稱</TableCell>
-                  <TableCell>電子郵件</TableCell>
-                  <TableCell>角色</TableCell>
-                  <TableCell>狀態</TableCell>
-                  <TableCell>最後登入</TableCell>
-                  <TableCell>操作</TableCell>
+                  <TableCell>{translate("username")}</TableCell>
+                  <TableCell>{translate("email")}</TableCell>
+                  <TableCell>{translate("role")}</TableCell>
+                  <TableCell>{translate("status")}</TableCell>
+                  <TableCell>{translate("last_login")}</TableCell>
+                  <TableCell>{translate("actions")}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -82,7 +84,9 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
                     <TableCell>
                       <Chip
                         label={
-                          user.status === "enabled" ? "● 啟用中" : "● 停用中"
+                          user.status === "enabled"
+                            ? translate("enabled")
+                            : translate("disabled")
                         }
                         color={
                           getStatusColor(user.status) as "success" | "default"
@@ -179,7 +183,7 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
                     }}
                   >
                     <Typography variant="body2" color="text.secondary">
-                      角色
+                      {translate("role")}
                     </Typography>
                     <Chip
                       label={user.role}
@@ -196,11 +200,13 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
                     }}
                   >
                     <Typography variant="body2" color="text.secondary">
-                      狀態
+                      {translate("status")}
                     </Typography>
                     <Chip
                       label={
-                        user.status === "enabled" ? "● 啟用中" : "● 停用中"
+                        user.status === "enabled"
+                          ? translate("enabled")
+                          : translate("disabled")
                       }
                       color={
                         getStatusColor(user.status) as "success" | "default"
@@ -230,7 +236,7 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
                     }}
                   >
                     <Typography variant="body2" color="text.secondary">
-                      最後登入
+                      {translate("last_login")}
                     </Typography>
                     <Typography variant="body2">{user.lastLogin}</Typography>
                   </Box>

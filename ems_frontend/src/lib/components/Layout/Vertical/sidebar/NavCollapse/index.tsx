@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React from "react";
 
 import { useState } from "react";
@@ -6,19 +6,19 @@ import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 
 // mui imports
-import Collapse from '@mui/material/Collapse';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import type { Theme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { styled, useTheme } from '@mui/material/styles';
+import Collapse from "@mui/material/Collapse";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import type { Theme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { styled, useTheme } from "@mui/material/styles";
 // custom imports
 import NavItem from "../NavItem";
 import { isNull } from "lodash";
 
 // plugins
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import type { IState } from "../../../../../../store/reducers";
 
 type NavGroupProps = {
@@ -31,7 +31,7 @@ type NavGroupProps = {
 };
 
 interface NavCollapseProps {
-  lng:string;
+  lng: string;
   menu: NavGroupProps;
   level: number;
   pathWithoutLastPart: any;
@@ -55,9 +55,9 @@ export default function NavCollapse({
   const customizer = useSelector((state: IState) => state.customizer);
   const theme = useTheme();
   const { pathname } = useLocation();
- 
+
   const [open, setOpen] = useState(false);
-  
+
   // 直接使用 menu.icon 而不是作为组件
   const menuIcon = menu?.icon;
 
@@ -75,26 +75,40 @@ export default function NavCollapse({
     });
   }, [pathname, menu.children]);
 
+  // Check if current path matches this menu or any of its children
+  const isMenuActive = () => {
+    // Check if current pathname matches this menu's href exactly
+    if (pathname === menu.href) {
+      return true;
+    }
+
+    // Check if any child menu matches the current pathname
+    if (menu.children) {
+      return menu.children.some(
+        (child: NavGroupProps) => child.href === pathname
+      );
+    }
+
+    return false;
+  };
+
   const ListItemStyled = styled(ListItemButton)(() => ({
     marginBottom: "2px",
     padding: "8px 10px",
     paddingLeft: hideMenu ? "10px" : level > 2 ? `${level * 15}px` : "10px",
-    backgroundColor: open && level < 2 ? theme.palette.primary.main : "",
+    backgroundColor:
+      isMenuActive() && level < 2 ? theme.palette.primary.dark : "transparent",
     whiteSpace: "nowrap",
     "&:hover": {
-      backgroundColor:
-        pathname.includes(menu.href) || open
-          ? theme.palette.primary.main
-          : theme.palette.primary.light,
-      color:
-        pathname.includes(menu.href) || open
-          ? "white"
-          : theme.palette.primary.main,
+      backgroundColor: isMenuActive()
+        ? theme.palette.primary.dark
+        : theme.palette.action.hover,
+      color: isMenuActive() ? "#ffffff" : theme.palette.primary.main,
     },
     color:
-      open && level < 2
-        ? "white"
-        : level > 1 && open
+      isMenuActive() && level < 2
+        ? "#ffffff"
+        : level > 1 && isMenuActive()
         ? theme.palette.primary.main
         : theme.palette.text.secondary,
     borderRadius: `${customizer.borderRadius}px`,
@@ -134,26 +148,25 @@ export default function NavCollapse({
     <>
       <ListItemStyled
         onClick={handleClick}
-        selected={pathWithoutLastPart === menu.href}
+        selected={isMenuActive()}
         key={menu?.id}
       >
         <ListItemIcon
           sx={{
             minWidth: "36px",
             p: "3px 0",
-            color: "inherit",
+            color:
+              isMenuActive() && level < 2
+                ? "#ffffff"
+                : theme.palette.text.secondary,
           }}
         >
           {menuIcon}
         </ListItemIcon>
-        <ListItemText color="inherit">
+        <ListItemText color="inherit" sx={{ pl: 1 }}>
           {hideMenu ? "" : <>{menu.title}</>}
         </ListItemText>
-        {!open ? (
-          <FaChevronDown size="1rem" />
-        ) : (
-          <FaChevronUp size="1rem" />
-        )}
+        {!open ? <FaChevronDown size="1rem" /> : <FaChevronUp size="1rem" />}
       </ListItemStyled>
       <Collapse in={open} timeout="auto">
         {submenus}

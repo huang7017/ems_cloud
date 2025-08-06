@@ -30,9 +30,15 @@ import {
   RolePermissionsTab,
   AccessRecordsTab,
 } from "./components";
+import { t } from "../../../helper/i18n";
 
-const UserManagementPage: React.FC = () => {
+interface PageProps {
+  lng: string;
+}
+const UserManagementPage: React.FC<PageProps> = ({ lng }) => {
   const dispatch = useDispatch();
+  // 使用傳入的lng參數進行翻譯
+  const translate = (key: string) => t(key, lng);
   const users = useSelector(filteredUsersSelector);
   const roles = useSelector(rolesSelector);
   const searchTerm = useSelector(searchTermSelector);
@@ -120,7 +126,7 @@ const UserManagementPage: React.FC = () => {
               textAlign: { xs: "center", sm: "left" },
             }}
           >
-            用戶與角色權限管理
+            {translate("user_management")}
           </Typography>
         </Box>
 
@@ -136,7 +142,7 @@ const UserManagementPage: React.FC = () => {
             }}
           >
             <TextField
-              placeholder="搜尋用戶..."
+              placeholder={translate("search_users")}
               value={searchTerm}
               onChange={handleSearchChange}
               InputProps={{
@@ -168,7 +174,7 @@ const UserManagementPage: React.FC = () => {
               }}
               startIcon={<PersonAddIcon />}
             >
-              新增用戶
+              {translate("add_user")}
             </Button>
           )}
           {tabValue === 1 && (
@@ -181,7 +187,7 @@ const UserManagementPage: React.FC = () => {
               }}
               startIcon={<BadgeIcon />}
             >
-              新增角色
+              {translate("add_role")}
             </Button>
           )}
         </Box>
@@ -203,7 +209,7 @@ const UserManagementPage: React.FC = () => {
               startIcon={<PersonAddIcon />}
               fullWidth
             >
-              新增用戶
+              {translate("add_user")}
             </Button>
           )}
           {tabValue === 1 && (
@@ -215,7 +221,7 @@ const UserManagementPage: React.FC = () => {
               sx={{ width: "100%" }}
               fullWidth
             >
-              新增角色
+              {translate("add_role")}
             </Button>
           )}
         </Box>
@@ -244,14 +250,18 @@ const UserManagementPage: React.FC = () => {
             },
           }}
         >
-          <Tab label="用戶管理" />
-          <Tab label="角色權限" />
-          <Tab label="存取記錄" />
+          <Tab label={translate("user_management_tab")} />
+          <Tab label={translate("role_permissions_tab")} />
+          <Tab label={translate("access_records_tab")} />
         </Tabs>
 
         <Box sx={{ flex: 1, overflow: "auto" }}>
           <TabPanel value={tabValue} index={0}>
-            <UserManagementTab users={users} onEditUser={handleEditUser} />
+            <UserManagementTab
+              users={users}
+              onEditUser={handleEditUser}
+              translate={translate}
+            />
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
@@ -259,6 +269,7 @@ const UserManagementPage: React.FC = () => {
               roles={roles}
               onEditRole={handleEditRole}
               onPermissionChange={handlePermissionChange}
+              translate={translate}
             />
           </TabPanel>
 
