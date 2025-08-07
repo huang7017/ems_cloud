@@ -198,11 +198,11 @@ AS SELECT role_power.id,
     
 INSERT INTO "member"
 ( "name",  "email", "is_enable", "create_id", "create_time", "modify_id", "modify_time")
-VALUES( 'SystemAdmin','system@hair',true, 1, '2020-11-29 03:53:46.988', 1, '2020-11-29 07:41:35.292');
+VALUES( 'SystemAdmin','system@ems.com',true, 1, '2020-11-29 03:53:46.988', 1, '2020-11-29 07:41:35.292');
 
 INSERT INTO member_history
-("member_id", "password", "salt", "error_count",  "create_id", "create_time", "modify_id", "modify_time")
-VALUES(1, '84c67b3049a3eb8fd84e556bf05ad66cf151ea22c0211eb95be975cccacdcc016dbcd35a95b8530c75165dcff2ec8fdb197009a8539f466005961948130918cd', '453112bf6ef24884b069b8b1ff889f99', 0, 1, '2020-06-04 11:53:46.988', 1, '2023-02-17 09:40:09.000');
+("member_id", "hash", "salt", "error_count",  "create_id", "create_time", "modify_id", "modify_time")
+VALUES(1, 'U9n6GNmnWrZon0KvO8nKTMKsMbqwT83Axf0AaqXjBPs=','bj4aCXeSj9QzrrEl', 0, 1, '2020-06-04 11:53:46.988', 1, '2023-02-17 09:40:09.000');
 
 
 INSERT INTO "role"

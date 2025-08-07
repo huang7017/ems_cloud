@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	TableNameMember = "members"
+	TableNameMember = "member"
 )
 
 type MemberModel struct {

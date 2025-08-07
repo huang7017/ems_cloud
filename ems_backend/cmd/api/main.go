@@ -3,7 +3,6 @@ package main
 import (
 	app_services "ems_backend/internal/application/services"
 	auth_services "ems_backend/internal/domain/auth/services"
-	"ems_backend/internal/infrastructure/persistence/models"
 	repositories "ems_backend/internal/infrastructure/persistence/repositories"
 	"ems_backend/internal/interface/api/handlers"
 	"ems_backend/internal/interface/api/router"
@@ -61,19 +60,19 @@ func main() {
 func setupEnvironment() {
 	// 数据库配置
 	if os.Getenv("DB_HOST") == "" {
-		os.Setenv("DB_HOST", "103.144.33.95")
+		os.Setenv("DB_HOST", "220.132.191.5")
 	}
 	if os.Getenv("DB_PORT") == "" {
 		os.Setenv("DB_PORT", "9432")
 	}
 	if os.Getenv("DB_USER") == "" {
-		os.Setenv("DB_USER", "here_user")
+		os.Setenv("DB_USER", "ems_user")
 	}
 	if os.Getenv("DB_CODE") == "" {
-		os.Setenv("DB_CODE", "ji394@here_user")
+		os.Setenv("DB_CODE", "ji394@ems_user")
 	}
 	if os.Getenv("DB_NAME") == "" {
-		os.Setenv("DB_NAME", "here")
+		os.Setenv("DB_NAME", "ems")
 	}
 
 	// 服务器配置
@@ -102,10 +101,7 @@ func initDatabase() (*gorm.DB, error) {
 	}
 
 	// 自動遷移數據庫表
-	if err := db.AutoMigrate(
-		&models.MemberModel{},
-		&models.MemberHistoryModel{},
-	); err != nil {
+	if err := db.AutoMigrate(); err != nil {
 		return nil, err
 	}
 

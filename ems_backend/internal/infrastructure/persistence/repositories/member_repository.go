@@ -4,6 +4,7 @@ import (
 	"ems_backend/internal/domain/member/entities"
 	"ems_backend/internal/domain/member/value_objects"
 	"ems_backend/internal/infrastructure/persistence/models"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -30,7 +31,7 @@ func (r *MemberRepository) FindByEmail(email string) (*entities.Member, error) {
 	if err := r.db.Where("email = ?", email).First(&model).Error; err != nil {
 		return nil, err
 	}
-
+	fmt.Println(model)
 	return r.mapToDomain(&model)
 }
 
@@ -49,7 +50,7 @@ func (r *MemberRepository) Delete(id string) error {
 }
 
 func (r *MemberRepository) mapToDomain(model *models.MemberModel) (*entities.Member, error) {
-	userID, err := value_objects.NewMemberID(model.ID)
+	memberID, err := value_objects.NewMemberID(model.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (r *MemberRepository) mapToDomain(model *models.MemberModel) (*entities.Mem
 	}
 
 	return &entities.Member{
-		ID:        userID,
+		ID:        memberID,
 		Name:      name,
 		Email:     email,
 		IsEnable:  model.IsEnable,

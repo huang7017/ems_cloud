@@ -7,6 +7,7 @@ import (
 	"ems_backend/internal/domain/member/repositories"
 	member_history_repositories "ems_backend/internal/domain/member_history/repositories"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -41,6 +42,7 @@ func (s *AuthService) Login(email, password string) (*entities.AuthResult, error
 		return nil, errors.New("invalid password")
 	}
 
+	fmt.Println(memberHistory)
 	// 2. 驗證憑證
 	verify := memberHistory.ValidatePassword(password, memberHistory.Salt, memberHistory.Hash)
 	if !verify {
