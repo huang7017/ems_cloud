@@ -11,14 +11,14 @@ type AuthSession struct {
 	ID           uint
 	MemberID     member_value_objects.MemberID
 	AccessToken  auth_value_objects.JWTToken
-	RefreshToken auth_value_objects.RefreshToken
+	RefreshToken auth_value_objects.JWTToken
 	CreateID     uint
 	CreateTime   time.Time
 	ModifyID     uint
 	ModifyTime   time.Time
 }
 
-func NewAuthSession(memberID member_value_objects.MemberID, accessToken auth_value_objects.JWTToken, refreshToken auth_value_objects.RefreshToken) *AuthSession {
+func NewAuthSession(memberID member_value_objects.MemberID, accessToken auth_value_objects.JWTToken, refreshToken auth_value_objects.JWTToken) *AuthSession {
 	return &AuthSession{
 		MemberID:     memberID,
 		AccessToken:  accessToken,
@@ -28,8 +28,4 @@ func NewAuthSession(memberID member_value_objects.MemberID, accessToken auth_val
 		CreateID:     memberID.Value(),
 		ModifyID:     memberID.Value(),
 	}
-}
-
-func (s *AuthSession) IsExpired() bool {
-	return s.RefreshToken.IsExpired()
 }

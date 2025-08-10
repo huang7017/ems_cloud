@@ -6,6 +6,7 @@ import (
 	member_value_objects "ems_backend/internal/domain/member/value_objects"
 	"ems_backend/internal/infrastructure/persistence/models"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -37,9 +38,16 @@ func (r *AuthRepository) SaveSession(session *entities.AuthSession) error {
 	return r.db.Save(model).Error
 }
 
+func (r *AuthRepository) UpdateAccessToken(id uint, accessToken string) error {
+	return r.db.Model(&models.AccessTokenModel{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"access_token": accessToken,
+		"modify_time":  time.Now(),
+	}).Error
+}
+
 func (r *AuthRepository) FindSessionByRefreshToken(refreshToken string) (*entities.AuthSession, error) {
 	var model models.AccessTokenModel
-	if err := r.db.Where("refresh_token = ? AND is_active = ?", refreshToken, true).First(&model).Error; err != nil {
+	if err := r.db.Where("refresh_token = ?", refreshToken).First(&model).Error; err != nil {
 		return nil, err
 	}
 
@@ -48,7 +56,7 @@ func (r *AuthRepository) FindSessionByRefreshToken(refreshToken string) (*entiti
 
 func (r *AuthRepository) FindSessionByMemberID(memberID uint) (*entities.AuthSession, error) {
 	var model models.AccessTokenModel
-	if err := r.db.Where("member_id = ? AND is_active = ?", memberID, true).First(&model).Error; err != nil {
+	if err := r.db.Where("member_id = ?", memberID).First(&model).Error; err != nil {
 		return nil, err
 	}
 
@@ -74,13 +82,16 @@ func (r *AuthRepository) mapToDomain(model *models.AccessTokenModel) (*entities.
 		return nil, err
 	}
 
-	refreshToken := auth_value_objects.NewRefreshToken(model.MemberID)
+	refreshToken, err := auth_value_objects.NewJWTToken(model.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
 
 	return &entities.AuthSession{
 		ID:           model.ID,
 		MemberID:     memberID,
 		AccessToken:  accessToken,
-		RefreshToken: *refreshToken,
+		RefreshToken: refreshToken,
 		CreateID:     model.CreateID,
 		CreateTime:   model.CreateTime,
 		ModifyID:     model.ModifyID,

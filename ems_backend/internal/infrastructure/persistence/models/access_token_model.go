@@ -9,14 +9,14 @@ const (
 )
 
 type AccessTokenModel struct {
-	ID           uint      `gorm:"primaryKey"`
-	MemberID     uint      `gorm:"not null;index"`
-	AccessToken  string    `gorm:"size:256"`
-	RefreshToken string    `gorm:"uniqueIndex;size:256"`
-	CreateID     uint      `gorm:"not null"`
-	CreateTime   time.Time `gorm:"not null"`
-	ModifyID     uint      `gorm:"not null"`
-	ModifyTime   time.Time `gorm:"not null"`
+	ID           uint
+	MemberID     uint
+	AccessToken  string
+	RefreshToken string
+	CreateID     uint
+	CreateTime   time.Time
+	ModifyID     uint
+	ModifyTime   time.Time
 }
 
 // TableName 返回表名

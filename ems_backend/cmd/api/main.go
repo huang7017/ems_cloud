@@ -31,7 +31,7 @@ func main() {
 	memberRoleRepo := repositories.NewMemberRoleRepository(db)
 
 	// 初始化 Domain Service
-	authService := auth_services.NewAuthService(memberRepo, memberHistoryRepo, authRepo, memberRoleRepo, "your-jwt-secret-key")
+	authService := auth_services.NewAuthService(memberRepo, memberHistoryRepo, authRepo, memberRoleRepo, "your-jwt-secret-key", "your-jwt-secret-key")
 
 	// 初始化 Application Service
 	authAppService := app_services.NewAuthApplicationService(authService)

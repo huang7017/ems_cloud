@@ -15,20 +15,22 @@ import (
 )
 
 type AuthService struct {
-	memberRepo        repositories.MemberRepository
-	memberHistoryRepo member_history_repositories.MemberHistoryRepository
-	authRepo          auth_repositories.AuthRepository
-	memberRoleRepo    member_role_repositories.MemberRoleRepository
-	jwtSecret         string
+	memberRepo         repositories.MemberRepository
+	memberHistoryRepo  member_history_repositories.MemberHistoryRepository
+	authRepo           auth_repositories.AuthRepository
+	memberRoleRepo     member_role_repositories.MemberRoleRepository
+	accessTokenSecret  string
+	refreshTokenSecret string
 }
 
-func NewAuthService(memberRepo repositories.MemberRepository, memberHistoryRepo member_history_repositories.MemberHistoryRepository, authRepo auth_repositories.AuthRepository, memberRoleRepo member_role_repositories.MemberRoleRepository, jwtSecret string) *AuthService {
+func NewAuthService(memberRepo repositories.MemberRepository, memberHistoryRepo member_history_repositories.MemberHistoryRepository, authRepo auth_repositories.AuthRepository, memberRoleRepo member_role_repositories.MemberRoleRepository, accessTokenSecret string, refreshTokenSecret string) *AuthService {
 	return &AuthService{
-		memberRepo:        memberRepo,
-		memberHistoryRepo: memberHistoryRepo,
-		authRepo:          authRepo,
-		memberRoleRepo:    memberRoleRepo,
-		jwtSecret:         jwtSecret,
+		memberRepo:         memberRepo,
+		memberHistoryRepo:  memberHistoryRepo,
+		authRepo:           authRepo,
+		memberRoleRepo:     memberRoleRepo,
+		accessTokenSecret:  accessTokenSecret,
+		refreshTokenSecret: refreshTokenSecret,
 	}
 }
 
@@ -59,7 +61,10 @@ func (s *AuthService) Login(email, password string) (*entities.AuthResult, error
 	}
 
 	// 4. 生成 Refresh Token
-	refreshToken := s.generateRefreshToken(member.ID.Value())
+	refreshToken, err := s.generateRefreshToken(member.ID.Value())
+	if err != nil {
+		return nil, err
+	}
 
 	// 5. 創建會話
 	accessTokenVO, err := s.createJWTToken(accessToken)
@@ -67,7 +72,12 @@ func (s *AuthService) Login(email, password string) (*entities.AuthResult, error
 		return nil, err
 	}
 
-	session := entities.NewAuthSession(member.ID, accessTokenVO, *refreshToken)
+	refreshTokenVO, err := s.createJWTToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	session := entities.NewAuthSession(member.ID, accessTokenVO, refreshTokenVO)
 
 	// 6. 保存會話
 	if err := s.authRepo.SaveSession(session); err != nil {
@@ -83,7 +93,7 @@ func (s *AuthService) Login(email, password string) (*entities.AuthResult, error
 	// 7. 返回認證結果
 	return entities.NewAuthResult(
 		accessToken,
-		refreshToken.String(),
+		refreshToken,
 		member,
 		memberRoles,
 		int64(24*time.Hour.Seconds()), // 24小時
@@ -97,8 +107,10 @@ func (s *AuthService) RefreshToken(refreshToken string) (*entities.AuthResult, e
 		return nil, errors.New("invalid refresh token")
 	}
 
-	if session.IsExpired() {
-		return nil, errors.New("refresh token expired")
+	_, err = s.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		s.authRepo.InvalidateSession(session.ID)
+		return nil, errors.New("invalid refresh token")
 	}
 
 	// 2. 查找會員
@@ -120,7 +132,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*entities.AuthResult, e
 	}
 
 	session.AccessToken = newAccessTokenVO
-	if err := s.authRepo.SaveSession(session); err != nil {
+	if err := s.authRepo.UpdateAccessToken(session.ID, session.AccessToken.String()); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +163,23 @@ func (s *AuthService) Logout(refreshToken string) error {
 
 func (s *AuthService) ValidateToken(tokenString string) (*auth_value_objects.JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &auth_value_objects.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.jwtSecret), nil
+		return []byte(s.accessTokenSecret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*auth_value_objects.JWTClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token")
+}
+
+func (s *AuthService) ValidateRefreshToken(refreshToken string) (*auth_value_objects.JWTClaims, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, &auth_value_objects.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(s.refreshTokenSecret), nil
 	})
 
 	if err != nil {
@@ -166,15 +194,19 @@ func (s *AuthService) ValidateToken(tokenString string) (*auth_value_objects.JWT
 }
 
 func (s *AuthService) generateAccessToken(memberID, username string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
+	expirationTime := time.Now().Add(5 * time.Minute)
 	claims := s.createJWTClaims(memberID, username, expirationTime)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.jwtSecret))
+	return token.SignedString([]byte(s.accessTokenSecret))
 }
 
-func (s *AuthService) generateRefreshToken(memberID uint) *auth_value_objects.RefreshToken {
-	return auth_value_objects.NewRefreshToken(memberID)
+func (s *AuthService) generateRefreshToken(memberID uint) (string, error) {
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := s.createJWTClaims("", "", expirationTime)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	refreshToken, err := token.SignedString([]byte(s.refreshTokenSecret))
+	return refreshToken, err
 }
 
 func (s *AuthService) createJWTToken(value string) (auth_value_objects.JWTToken, error) {
