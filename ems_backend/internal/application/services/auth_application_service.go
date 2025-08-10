@@ -3,6 +3,7 @@ package services
 import (
 	"ems_backend/internal/application/dto"
 	"ems_backend/internal/domain/auth/services"
+	"strconv"
 )
 
 type AuthApplicationService struct {
@@ -24,6 +25,13 @@ func (s *AuthApplicationService) Login(request *dto.LoginRequest) (*dto.APIRespo
 		}, nil
 	}
 
+	memberRoles := make([]dto.MemberRole, len(authResult.MemberRoles))
+	for i, role := range authResult.MemberRoles {
+		memberRoles[i] = dto.MemberRole{
+			ID:   strconv.FormatUint(uint64(role.ID), 10),
+			Name: role.RoleName,
+		}
+	}
 	// 轉換為 DTO
 	authResponse := &dto.AuthResponse{
 		AccessToken:  authResult.AccessToken,
@@ -32,8 +40,9 @@ func (s *AuthApplicationService) Login(request *dto.LoginRequest) (*dto.APIRespo
 			ID:   authResult.Member.ID,
 			Name: authResult.Member.Name,
 		},
-		ExpiresIn: authResult.ExpiresIn,
-		TokenType: authResult.TokenType,
+		MemberRoles: memberRoles,
+		ExpiresIn:   authResult.ExpiresIn,
+		TokenType:   authResult.TokenType,
 	}
 
 	return &dto.APIResponse{
@@ -51,6 +60,13 @@ func (s *AuthApplicationService) RefreshToken(request *dto.RefreshTokenRequest) 
 		}, nil
 	}
 
+	memberRoles := make([]dto.MemberRole, len(authResult.MemberRoles))
+	for i, role := range authResult.MemberRoles {
+		memberRoles[i] = dto.MemberRole{
+			ID:   strconv.FormatUint(uint64(role.ID), 10),
+			Name: role.RoleName,
+		}
+	}
 	// 轉換為 DTO
 	authResponse := &dto.AuthResponse{
 		AccessToken:  authResult.AccessToken,
@@ -59,8 +75,9 @@ func (s *AuthApplicationService) RefreshToken(request *dto.RefreshTokenRequest) 
 			ID:   authResult.Member.ID,
 			Name: authResult.Member.Name,
 		},
-		ExpiresIn: authResult.ExpiresIn,
-		TokenType: authResult.TokenType,
+		MemberRoles: memberRoles,
+		ExpiresIn:   authResult.ExpiresIn,
+		TokenType:   authResult.TokenType,
 	}
 
 	return &dto.APIResponse{

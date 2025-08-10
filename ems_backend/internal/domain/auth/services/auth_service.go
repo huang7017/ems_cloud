@@ -6,6 +6,7 @@ import (
 	auth_value_objects "ems_backend/internal/domain/auth/value_objects"
 	"ems_backend/internal/domain/member/repositories"
 	member_history_repositories "ems_backend/internal/domain/member_history/repositories"
+	member_role_repositories "ems_backend/internal/domain/member_role/repositories"
 	"errors"
 	"fmt"
 	"time"
@@ -17,14 +18,16 @@ type AuthService struct {
 	memberRepo        repositories.MemberRepository
 	memberHistoryRepo member_history_repositories.MemberHistoryRepository
 	authRepo          auth_repositories.AuthRepository
+	memberRoleRepo    member_role_repositories.MemberRoleRepository
 	jwtSecret         string
 }
 
-func NewAuthService(memberRepo repositories.MemberRepository, memberHistoryRepo member_history_repositories.MemberHistoryRepository, authRepo auth_repositories.AuthRepository, jwtSecret string) *AuthService {
+func NewAuthService(memberRepo repositories.MemberRepository, memberHistoryRepo member_history_repositories.MemberHistoryRepository, authRepo auth_repositories.AuthRepository, memberRoleRepo member_role_repositories.MemberRoleRepository, jwtSecret string) *AuthService {
 	return &AuthService{
 		memberRepo:        memberRepo,
 		memberHistoryRepo: memberHistoryRepo,
 		authRepo:          authRepo,
+		memberRoleRepo:    memberRoleRepo,
 		jwtSecret:         jwtSecret,
 	}
 }
@@ -71,11 +74,18 @@ func (s *AuthService) Login(email, password string) (*entities.AuthResult, error
 		return nil, err
 	}
 
+	// 7. 獲取會員角色
+	memberRoles, err := s.memberRoleRepo.GetByMemberID(member.ID.Value())
+	if err != nil {
+		return nil, err
+	}
+
 	// 7. 返回認證結果
 	return entities.NewAuthResult(
 		accessToken,
 		refreshToken.String(),
 		member,
+		memberRoles,
 		int64(24*time.Hour.Seconds()), // 24小時
 	), nil
 }
@@ -114,11 +124,18 @@ func (s *AuthService) RefreshToken(refreshToken string) (*entities.AuthResult, e
 		return nil, err
 	}
 
+	// 5. 獲取會員角色
+	memberRoles, err := s.memberRoleRepo.GetByMemberID(member.ID.Value())
+	if err != nil {
+		return nil, err
+	}
+
 	// 5. 返回新的認證結果
 	return entities.NewAuthResult(
 		newAccessToken,
 		session.RefreshToken.String(),
 		member,
+		memberRoles,
 		int64(24*time.Hour.Seconds()),
 	), nil
 }

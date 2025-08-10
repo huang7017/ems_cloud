@@ -46,12 +46,6 @@ func (m *Member) LockAccount() {
 	m.UpdatedAt = time.Now()
 }
 
-func (m *Member) validatePassword(password string) bool {
-	// 這裡應該實現密碼驗證邏輯
-	// 例如：return bcrypt.CompareHashAndPassword([]byte(m.Password), []byte(password)) == nil
-	return password == "correct_password" // 簡化示例
-}
-
 // GetPublicInfo - 返回公開信息（用於 API 回應）
 func (m *Member) GetPublicInfo() *MemberPublicInfo {
 	return &MemberPublicInfo{
