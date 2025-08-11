@@ -2,9 +2,7 @@
 import React from "react";
 import {
   Box,
-  Container,
   Typography,
-  Grid,
   Paper,
   Select,
   MenuItem,
@@ -136,8 +134,16 @@ const HomePage: React.FC = () => {
         </Box>
 
         {/* Data Overview Grid */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            mb: 3,
+            alignItems: "stretch",
+          }}
+        >
+          <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
             <StatCard elevation={1}>
               <Box>
                 <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
@@ -166,9 +172,9 @@ const HomePage: React.FC = () => {
                 </Box>
               </Box>
             </StatCard>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
             <StatCard elevation={1}>
               <Box>
                 <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
@@ -197,9 +203,9 @@ const HomePage: React.FC = () => {
                 </Box>
               </Box>
             </StatCard>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
             <StatCard elevation={1}>
               <Box>
                 <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
@@ -225,9 +231,9 @@ const HomePage: React.FC = () => {
                 </Box>
               </Box>
             </StatCard>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
             <StatCard elevation={1}>
               <Box>
                 <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
@@ -253,13 +259,21 @@ const HomePage: React.FC = () => {
                 </Box>
               </Box>
             </StatCard>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* Energy Usage Trends and Environment Data */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={9}>
-            <Paper elevation={1} sx={{ p: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            mb: 3,
+            alignItems: "stretch",
+          }}
+        >
+          <Box sx={{ flex: "1 1 600px", minWidth: 0 }}>
+            <Paper elevation={1} sx={{ p: 3, height: "100%" }}>
               <Box
                 sx={{
                   display: "flex",
@@ -295,10 +309,10 @@ const HomePage: React.FC = () => {
                 </Typography>
               </Box>
             </Paper>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={3}>
-            <Paper elevation={1} sx={{ p: 3 }}>
+          <Box sx={{ flex: "0 1 300px", minWidth: 0 }}>
+            <Paper elevation={1} sx={{ p: 3, height: "100%" }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                 環境數據
               </Typography>
@@ -378,13 +392,21 @@ const HomePage: React.FC = () => {
                 />
               </Box>
             </Paper>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* ESG Performance */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={6}>
-            <Paper elevation={1} sx={{ p: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            mb: 3,
+            alignItems: "stretch",
+          }}
+        >
+          <Box sx={{ flex: "1 1 500px", minWidth: 0 }}>
+            <Paper elevation={1} sx={{ p: 3, height: "100%" }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                 ESG 績效指標
               </Typography>
@@ -487,10 +509,10 @@ const HomePage: React.FC = () => {
                 </Box>
               </Box>
             </Paper>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={6}>
-            <Paper elevation={1} sx={{ p: 3 }}>
+          <Box sx={{ flex: "1 1 500px", minWidth: 0 }}>
+            <Paper elevation={1} sx={{ p: 3, height: "100%" }}>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                 節能最佳實踐
               </Typography>
@@ -587,8 +609,8 @@ const HomePage: React.FC = () => {
                 </Box>
               </Box>
             </Paper>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* Device Status */}
         <Paper elevation={1} sx={{ p: 3 }}>
@@ -612,8 +634,15 @@ const HomePage: React.FC = () => {
             </FormControl>
           </Box>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              alignItems: "stretch",
+            }}
+          >
+            <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
               <DeviceCard elevation={1}>
                 <Box
                   sx={{
@@ -646,9 +675,9 @@ const HomePage: React.FC = () => {
                   </Typography>
                 </Box>
               </DeviceCard>
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
               <DeviceCard elevation={1}>
                 <Box
                   sx={{
@@ -681,9 +710,9 @@ const HomePage: React.FC = () => {
                   </Typography>
                 </Box>
               </DeviceCard>
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
               <DeviceCard elevation={1}>
                 <Box
                   sx={{
@@ -716,9 +745,9 @@ const HomePage: React.FC = () => {
                   </Typography>
                 </Box>
               </DeviceCard>
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
               <DeviceCard elevation={1}>
                 <Box
                   sx={{
@@ -751,8 +780,8 @@ const HomePage: React.FC = () => {
                   </Typography>
                 </Box>
               </DeviceCard>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Paper>
       </Box>
     </Box>
