@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   Box,
@@ -8,16 +8,33 @@ import {
   Typography,
   Paper,
   Avatar,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { BsFillLockFill } from "react-icons/bs";
 
 import { actions } from "./reducer";
+import type { IState } from "../../store/reducers";
 
 const LoginPage: React.FC = () => {
   const dispatch = useDispatch();
+  const { loading, error } = useSelector((state: IState) => state.auth);
 
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = () => {
+    if (!account || !password) {
+      return;
+    }
+
+    dispatch(
+      actions.fetchAuthLogin({
+        account: account,
+        password: password,
+      })
+    );
+  };
 
   return (
     <Box
@@ -29,7 +46,7 @@ const LoginPage: React.FC = () => {
         height: "100vh",
       }}
     >
-      <Paper elevation={3} sx={{ padding: 4 }}>
+      <Paper elevation={3} sx={{ padding: 4, minWidth: 400 }}>
         <Box
           sx={{
             display: "flex",
@@ -45,11 +62,18 @@ const LoginPage: React.FC = () => {
             Sign in
           </Typography>
         </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <Box
           component="form"
           sx={{
             mt: 1,
-            width: "100%", // Fix IE 11 issue.
+            width: "100%",
           }}
           noValidate
         >
@@ -61,15 +85,17 @@ const LoginPage: React.FC = () => {
             id="account"
             label="Account"
             name="Account"
+            value={account}
             InputProps={{
-              style: { color: 'black' },
+              style: { color: "black" },
             }}
-            InputLabelProps={
-              {shrink: true}
-            }
+            InputLabelProps={{
+              shrink: true,
+            }}
             onChange={(e) => {
               setAccount(e.target.value);
             }}
+            disabled={loading}
           />
           <TextField
             variant="outlined"
@@ -80,32 +106,29 @@ const LoginPage: React.FC = () => {
             label="Password"
             type="password"
             id="password"
+            value={password}
             autoComplete="current-password"
             InputProps={{
-              style: { color: 'black' },
+              style: { color: "black" },
             }}
-            InputLabelProps={
-              {shrink: true}
-            }
+            InputLabelProps={{
+              shrink: true,
+            }}
             onChange={(e) => {
               setPassword(e.target.value);
             }}
+            disabled={loading}
           />
           <Button
             fullWidth
             variant="contained"
             color="primary"
             sx={{ mt: 3, mb: 2 }}
-            onClick={() =>
-              dispatch(
-                actions.fetchAuthLogin({
-                  account: account,
-                  password: password,
-                })
-              )
-            }
+            onClick={handleLogin}
+            disabled={loading || !account || !password}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </Button>
         </Box>
       </Paper>
