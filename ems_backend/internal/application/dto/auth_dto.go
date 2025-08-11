@@ -37,10 +37,3 @@ type MemberRole struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
-
-// APIResponse - 通用 API 回應格式
-type APIResponse struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
-}

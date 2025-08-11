@@ -3,6 +3,7 @@ package main
 import (
 	app_services "ems_backend/internal/application/services"
 	auth_services "ems_backend/internal/domain/auth/services"
+	menu_services "ems_backend/internal/domain/menu/services"
 	repositories "ems_backend/internal/infrastructure/persistence/repositories"
 	"ems_backend/internal/interface/api/handlers"
 	"ems_backend/internal/interface/api/router"
@@ -30,15 +31,18 @@ func main() {
 	authRepo := repositories.NewAuthRepository(db)
 	memberHistoryRepo := repositories.NewMemberHistoryRepository(db)
 	memberRoleRepo := repositories.NewMemberRoleRepository(db)
+	menuRepo := repositories.NewMenuRepository(db)
 
 	// 初始化 Domain Service
 	authService := auth_services.NewAuthService(memberRepo, memberHistoryRepo, authRepo, memberRoleRepo, "your-jwt-secret-key", "your-jwt-secret-key")
-
+	menuService := menu_services.NewMenuService(menuRepo)
 	// 初始化 Application Service
 	authAppService := app_services.NewAuthApplicationService(authService)
+	menuAppService := app_services.NewMenuApplicationService(menuService)
 
 	// 初始化 Handler
 	authHandler := handlers.NewAuthHandler(authAppService)
+	menuHandler := handlers.NewMenuHandler(menuAppService)
 
 	// 設置 Gin 路由
 	ginRouter := gin.Default()
@@ -52,7 +56,7 @@ func main() {
 	}))
 
 	// 設置路由
-	router.SetupAuthRoutes(ginRouter, authHandler)
+	router.SetupRoutes(ginRouter, authHandler, menuHandler, authService)
 
 	// 啟動服務器
 	port := os.Getenv("PORT")

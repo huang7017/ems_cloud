@@ -44,7 +44,6 @@ func AuthMiddleware(authService *services.AuthService) gin.HandlerFunc {
 
 		// 將會員信息存儲到上下文中
 		c.Set("member_id", claims.MemberID)
-		c.Set("username", claims.Username)
 
 		c.Next()
 	}
