@@ -12,6 +12,26 @@ axios.defaults.timeout = config.api.timeout;
 
 axios.defaults.withCredentials = true;
 
+// Request interceptor to add authorization header
+axios.interceptors.request.use(
+  (config) => {
+    // Get token from cookies
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("accessToken="))
+      ?.split("=")[1];
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor to handle errors and redirects
 axios.interceptors.response.use(
   async (response) => {

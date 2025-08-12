@@ -4,6 +4,7 @@ import type { authLoginRequest, authLoginResponse } from "./types";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
 import { fetchAuthLoginData } from "../../api/auth";
+import { fetchMenusStart } from "../Menu/index";
 
 const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
   try {
@@ -33,6 +34,11 @@ const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
 
       console.log(response.data);
       yield put(actions.setUser(response.data));
+
+      // Fetch menus after successful login
+      // Add a small delay to ensure tokens are stored in cookies
+      yield new Promise((resolve) => setTimeout(resolve, 100));
+      yield put(fetchMenusStart());
     } else {
       // Handle login failure
       console.error("Saga: Login failed:", response);

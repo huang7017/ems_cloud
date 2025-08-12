@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { actions } from "../../../../../features/Login/reducer";
 import { userSelector } from "../../../../../features/Login/selector";
 import { memberNameSelector } from "../../../../../features/Util/selector";
+import { clearMenus } from "../../../../../features/Menu";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -35,6 +36,8 @@ const Profile = () => {
     handleClose();
     console.log("Profile: Dispatching logout action");
     dispatch(actions.logout());
+    console.log("Profile: Clearing menu state");
+    dispatch(clearMenus());
     console.log("Profile: Navigating to login page");
     navigate("/public/login");
   }, [dispatch, navigate, handleClose]);
