@@ -32,7 +32,6 @@ const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
       console.log("Saga: Tokens stored, redirecting to user management...");
 
       yield put(actions.setUser(response.data));
-
       yield (window.location.href = "/");
     } else {
       // Handle login failure
