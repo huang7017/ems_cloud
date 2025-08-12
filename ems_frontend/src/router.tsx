@@ -1,27 +1,21 @@
 import React from "react";
-import { Navigate, BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import BasicLayout from "./layouts/BasicLayout";
 import PublicLayout from "./layouts/PublicLayout";
-import Cookies from "js-cookie";
+import AuthGuard from "./lib/components/AuthGuard/AuthGuard";
 
 const RouterContainer = () => {
-  const onEnter = (
-    Component: React.ComponentType<any>,
-    componentProps: any
-  ) => {
-    if (Cookies.get("accessToken")) {
-      return <Component {...componentProps} />;
-    }
-    return <Navigate to="/public/login" />;
-  };
-
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/public/*" element={<PublicLayout />} />
         <Route
           path="/*"
-          element={onEnter(BasicLayout, { user: Cookies.get("name") })}
+          element={
+            <AuthGuard>
+              <BasicLayout />
+            </AuthGuard>
+          }
         />
       </Routes>
     </BrowserRouter>

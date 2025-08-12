@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import {
   Box,
@@ -14,11 +15,21 @@ import {
 import { BsFillLockFill } from "react-icons/bs";
 
 import { actions } from "./reducer";
-import type { IState } from "../../store/reducers";
+import {
+  loadingSelector,
+  errorSelector,
+  userSelector,
+  isAuthenticatedSelector,
+} from "./selector";
 
 const LoginPage: React.FC = () => {
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state: IState) => state.auth);
+  const navigate = useNavigate();
+
+  const loading = useSelector(loadingSelector);
+  const error = useSelector(errorSelector);
+  const user = useSelector(userSelector);
+  const isAuthenticated = useSelector(isAuthenticatedSelector);
 
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
@@ -35,6 +46,23 @@ const LoginPage: React.FC = () => {
       })
     );
   };
+
+  // 監聽認證狀態變化，登入成功後自動導航
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate("/");
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // 清除錯誤訊息
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch(actions.clearError());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
   return (
     <Box

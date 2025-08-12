@@ -1,6 +1,6 @@
 import { combineReducers } from "redux";
 
-import { reducer as CustomizerReducer } from "./Customizer/reducer";
+import { reducer as CustomizerReducer } from "./Customizer/reducer.tsx";
 import { reducer as AuthReducer } from "../features/Login/reducer";
 import { reducer as UtilReducer } from "../features/Util/reducer";
 import { reducer as HomeReducer } from "../features/Home/reducer";

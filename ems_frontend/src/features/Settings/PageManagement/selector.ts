@@ -1,9 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit";
-import type { RootState } from "../../../store";
-import type { Page, PageTreeItem } from "./types";
+import type { IState } from "../../../store/reducers";
+import type { PageTreeItem } from "./types";
 
 // Base selectors
-export const pageManagementStateSelector = (state: RootState) =>
+export const pageManagementStateSelector = (state: IState) =>
   state.pageManagement;
 
 export const pagesSelector = createSelector(

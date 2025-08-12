@@ -36,9 +36,8 @@ import {
   AutoMode as AutoModeIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import { useDispatch, useSelector } from "react-redux";
-import { selectUser } from "../Login/selector";
-import type { IState } from "@/store/reducers";
+import { useSelector } from "react-redux";
+import { userSelector } from "../Login/selector";
 
 // Styled components
 const SearchBox = styled(Box)(({ theme }) => ({
@@ -246,9 +245,8 @@ const mockData = {
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
-  const dispatch = useDispatch();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const user = useSelector((state: IState) => state.auth.user);
+  const user = useSelector(userSelector);
   console.log(user);
 
   return (

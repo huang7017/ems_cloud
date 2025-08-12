@@ -29,10 +29,10 @@ const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
       Cookies.set("name", encodeURIComponent(response.data.member.name));
       Cookies.set("userId", response.data.member.id);
 
-      console.log("Saga: Tokens stored, redirecting to user management...");
+      console.log("Saga: Tokens stored, setting user data...");
 
+      console.log(response.data);
       yield put(actions.setUser(response.data));
-      yield (window.location.href = "/");
     } else {
       // Handle login failure
       console.error("Saga: Login failed:", response);

@@ -1,7 +1,7 @@
-import RouterContainer from './router'
+import RouterContainer from "./router";
 
 function App() {
-  return <RouterContainer />
+  return <RouterContainer />;
 }
 
-export default App
+export default App;

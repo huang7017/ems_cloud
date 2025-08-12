@@ -1,6 +1,6 @@
 /** 基础页面结构 - 有头部，有底部，有侧边导航 **/
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Sidebar from "../lib/components/Layout/Vertical/sidebar/Sidebar";
@@ -10,6 +10,7 @@ import { Main, Page } from "../lib/components/Layout/Wrapper";
 import type { MenuitemsType } from "../lib/components/Layout/Vertical/sidebar/types";
 import { getIcon } from "../lib/components/Icon/iconMapper";
 import type { IState } from "../store/reducers";
+import { useAuthInit } from "../lib/hooks/useAuthInit";
 
 // ==================
 // 路由组件
@@ -23,21 +24,6 @@ const UserManagementPage = React.lazy(
 const PageManagementPage = React.lazy(
   () => import("../features/Settings/PageManagement/index")
 );
-
-// ==================
-// 类型定义
-// ==================
-interface UserInfo {
-  menu: {
-    rows: any[];
-  };
-}
-
-interface BasicLayoutProps {
-  userinfo: UserInfo;
-  onLogout: () => Promise<void>;
-  switchRole: (key: string) => Promise<any>;
-}
 
 // ==================
 // 主组件
@@ -84,44 +70,57 @@ const createSidebarStructure = (
   // Filter out top-level items (those without a parent)
   return Array.from(itemMap.values()).filter((item) => !item.parent);
 };
-const BasicLayout: React.FC<BasicLayoutProps> = () => {
+
+const BasicLayout: React.FC = () => {
   const customizer = useSelector((state: IState) => state.customizer);
   const currentLanguage = customizer.isLanguage || "en";
 
-  const sideBar: MenuitemsType[] = createSidebarStructure([
-    {
-      id: 1,
-      parent: 0,
-      title: "Home",
-      url: "/",
-      icon: "HomeIcon",
-    },
-    {
-      id: 2,
-      parent: 0,
-      title: "Settings",
-      url: "/settings",
-      icon: "SettingsIcon",
-    },
-    {
-      id: 3,
-      parent: 2,
-      title: "User Management",
-      url: "/user-management",
-      icon: "PeopleIcon",
-    },
-    {
-      id: 4,
-      parent: 2,
-      title: "Page Management",
-      url: "/page-management",
-      icon: "PagesIcon",
-    },
-  ]);
+  // Initialize authentication state
+  useAuthInit();
+
+  // Memoize the sidebar structure to prevent unnecessary re-renders
+  const sideBar: MenuitemsType[] = useMemo(() => {
+    return createSidebarStructure([
+      {
+        id: 1,
+        parent: 0,
+        title: "Home",
+        url: "/",
+        icon: "HomeIcon",
+      },
+      {
+        id: 2,
+        parent: 0,
+        title: "Settings",
+        url: "/settings",
+        icon: "SettingsIcon",
+      },
+      {
+        id: 3,
+        parent: 2,
+        title: "User Management",
+        url: "/user-management",
+        icon: "PeopleIcon",
+      },
+      {
+        id: 4,
+        parent: 2,
+        title: "Page Management",
+        url: "/page-management",
+        icon: "PagesIcon",
+      },
+    ]);
+  }, []); // Empty dependency array since the data is static
+
+  // Memoize the current language to prevent unnecessary re-renders
+  const memoizedCurrentLanguage = useMemo(
+    () => currentLanguage,
+    [currentLanguage]
+  );
 
   return (
     <Main>
-      <Sidebar menuitems={sideBar} lng={currentLanguage} />
+      <Sidebar menuitems={sideBar} lng={memoizedCurrentLanguage} />
       <Page>
         <Header />
         <Box
@@ -135,11 +134,11 @@ const BasicLayout: React.FC<BasicLayoutProps> = () => {
             <Route path="/" element={<HomePage />} />
             <Route
               path="/settings/user-management"
-              element={<UserManagementPage lng={currentLanguage} />}
+              element={<UserManagementPage lng={memoizedCurrentLanguage} />}
             />
             <Route
               path="/settings/page-management"
-              element={<PageManagementPage lng={currentLanguage} />}
+              element={<PageManagementPage lng={memoizedCurrentLanguage} />}
             />
           </Routes>
         </Box>

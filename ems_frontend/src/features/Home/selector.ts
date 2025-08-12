@@ -1,13 +1,10 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { initialState } from "./reducer";
+import type { IState } from "../../store/reducers";
 
-const selectFeature = (state: any) => state.home || initialState;
+const homeState = (state: IState) => state.home || initialState;
 
-export const loadingSelector = createSelector(selectFeature, (state) => state.loading);
-export const dataInitializedSelector = createSelector(selectFeature, (state) => state.dataInitialized);
-export const vrfSystemsSelector = createSelector(selectFeature, (state) => state.vrfSystems);
-export const vrfSensorsSelector = createSelector(selectFeature, (state) => state.vrfSensors);
-
-// 比對相關的 selectors
-export const compareLoadingSelector = createSelector(selectFeature, (state) => state.compareLoading);
-export const compareResultSelector = createSelector(selectFeature, (state) => state.compareResult);
+export const loadingSelector = createSelector(
+  homeState,
+  (state) => state.loading
+);

@@ -1,14 +1,14 @@
-import { createSelector } from "reselect";
-import type { IState } from "@/store/reducers";
+import { createSelector } from "@reduxjs/toolkit";
+import type { IState } from "../../store/reducers";
 
 export const utilState = (state: IState) => state.util;
 
-export const memberNameSelctor = createSelector(
+export const memberNameSelector = createSelector(
   utilState,
   (state) => state.name
 );
 
-export const memberImageSelctor = createSelector(
+export const memberImageSelector = createSelector(
   utilState,
   (state) => state.image
 );
