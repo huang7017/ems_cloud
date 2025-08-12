@@ -12,31 +12,32 @@ const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
 
     console.log("Saga: Starting login process...");
 
-    const data: authLoginResponse = yield call(
+    const response: authLoginResponse = yield call(
       fetchAuthLoginData,
       action.payload
     );
+    console.log("Saga: Received response:", response);
+    console.log("Saga: Response type:", typeof response);
+    console.log("Saga: Response keys:", Object.keys(response || {}));
 
-    console.log("Saga: Received response:", data);
-    console.log("Saga: Response type:", typeof data);
-    console.log("Saga: Response keys:", Object.keys(data || {}));
-
-    if (data && data.success && data.data) {
+    if (response && response.success && response.data) {
       console.log("Saga: Login successful, storing tokens...");
 
       // Store tokens and user info in cookies
-      Cookies.set("accessToken", data.data.access_token);
-      Cookies.set("refreshToken", data.data.refresh_token);
-      Cookies.set("name", encodeURIComponent(data.data.member.name));
-      Cookies.set("userId", data.data.member.id);
+      Cookies.set("accessToken", response.data.access_token);
+      Cookies.set("refreshToken", response.data.refresh_token);
+      Cookies.set("name", encodeURIComponent(response.data.member.name));
+      Cookies.set("userId", response.data.member.id);
 
       console.log("Saga: Tokens stored, redirecting to user management...");
+
+      yield put(actions.setUser(response.data));
 
       yield (window.location.href = "/");
     } else {
       // Handle login failure
-      console.error("Saga: Login failed:", data);
-      const errorMessage = data?.error || "Login failed";
+      console.error("Saga: Login failed:", response);
+      const errorMessage = response?.error || "Login failed";
       yield put(actions.setError(errorMessage));
     }
   } catch (error) {

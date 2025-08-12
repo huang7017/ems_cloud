@@ -6,6 +6,7 @@ export const initialState = {
   loading: false as boolean,
   login: {} as authLoginRequest,
   error: null as string | null,
+  user: null as any,
 };
 
 const authSlice = createSlice({
@@ -19,6 +20,9 @@ const authSlice = createSlice({
       state.error = action.payload;
     },
     fetchAuthLogin(_state, _action: PayloadAction<authLoginRequest>) {},
+    setUser(state, action: PayloadAction<any>) {
+      state.user = action.payload;
+    },
   },
 });
 
