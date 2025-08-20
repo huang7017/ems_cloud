@@ -22,6 +22,7 @@ func (h *MenuHandler) GetAll(c *gin.Context) {
 	menus, err := h.menuAppService.GetAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, dto.APIResponse{Success: true, Data: menus})
 }
