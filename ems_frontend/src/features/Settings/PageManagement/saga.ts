@@ -1,212 +1,182 @@
-import { call, put, takeLatest, delay } from "redux-saga/effects";
+import { call, put, takeLatest } from "redux-saga/effects";
 import { actions } from "./reducer";
 import type { Page } from "./types";
+import {
+  fetchMenusApi,
+  createMenuApi,
+  updateMenuApi,
+  deleteMenuApi,
+  type MenuItem,
+} from "../../../api/menu";
 
-// Fake data for pages
-const fakePages: Page[] = [
-  {
-    id: 1,
-    parent: 0,
-    title: "首頁",
-    url: "/",
-    icon: "HomeIcon",
-    order: 1,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 2,
-    parent: 0,
-    title: "設定",
-    url: "/settings",
-    icon: "SettingsIcon",
-    order: 2,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 3,
-    parent: 2,
-    title: "用戶管理",
-    url: "/settings/user-management",
-    icon: "PeopleIcon",
-    order: 1,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 4,
-    parent: 2,
-    title: "分頁管理",
-    url: "/settings/page-management",
-    icon: "PagesIcon",
-    order: 2,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 5,
-    parent: 0,
-    title: "儀表板",
-    url: "/dashboard",
-    icon: "DashboardIcon",
-    order: 3,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 6,
-    parent: 0,
-    title: "設備管理",
-    url: "/devices",
-    icon: "DeviceIcon",
-    order: 4,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 7,
-    parent: 6,
-    title: "設備列表",
-    url: "/devices/list",
-    icon: "ListIcon",
-    order: 1,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 8,
-    parent: 6,
-    title: "設備監控",
-    url: "/devices/monitor",
-    icon: "MonitorIcon",
-    order: 2,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 9,
-    parent: 6,
-    title: "設備詳情",
-    url: "/devices/info/:id",
-    icon: "InfoIcon",
-    order: 3,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-  {
-    id: 10,
-    parent: 6,
-    title: "設備編輯",
-    url: "/devices/edit/:id",
-    icon: "EditIcon",
-    order: 4,
-    isActive: true,
-    createdAt: "2023/05/01 10:00:00",
-    updatedAt: "2023/05/01 10:00:00",
-  },
-];
+// Convert MenuItem to Page format
+const menuItemToPage = (menuItem: MenuItem): Page => ({
+  id: menuItem.id,
+  parent: menuItem.parent,
+  title: menuItem.title,
+  url: menuItem.url,
+  icon: menuItem.icon,
+  sort: menuItem.sort,
+  is_enable: menuItem.is_enable,
+  is_show: menuItem.is_show,
+});
 
-// Simulate API delay
-const simulateApiCall = () => delay(500);
+// Convert Page to MenuItem format
+const pageToMenuItem = (page: Omit<Page, "id">): Omit<MenuItem, "id"> => ({
+  parent: page.parent,
+  title: page.title,
+  url: page.url,
+  icon: page.icon,
+  sort: page.sort,
+  is_enable: page.is_enable,
+  is_show: page.is_show,
+});
 
 // Fetch pages saga
 function* fetchPagesSaga() {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.fetchPagesSuccess(fakePages));
+    const response: { success: boolean; data: MenuItem[] } = yield call(
+      fetchMenusApi
+    );
+
+    if (response.success) {
+      const pages = response.data.map(menuItemToPage);
+      yield put(actions.fetchPagesSuccess(pages));
+    } else {
+      yield put(actions.fetchPagesFailure("Failed to fetch pages"));
+    }
   } catch (error) {
-    yield put(actions.fetchPagesFailure("Failed to fetch pages"));
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An error occurred while fetching pages";
+    yield put(actions.fetchPagesFailure(errorMessage));
   }
 }
 
 // Create page saga
 function* createPageSaga(action: ReturnType<typeof actions.createPage>) {
   try {
-    yield call(simulateApiCall);
-    const newPage: Page = {
-      ...action.payload,
-      id: Math.max(...fakePages.map((p) => p.id)) + 1,
-      createdAt: new Date().toLocaleString("zh-TW"),
-      updatedAt: new Date().toLocaleString("zh-TW"),
-      isActive: true,
-    };
-    fakePages.push(newPage);
-    yield put(actions.createPageSuccess(newPage));
-    yield put(actions.setDialogOpen(false));
+    const menuData = pageToMenuItem(action.payload);
+    const response: { success: boolean; data: MenuItem[] } = yield call(
+      createMenuApi,
+      menuData
+    );
+
+    if (response.success && response.data.length > 0) {
+      const newPage = menuItemToPage(response.data[0]);
+      yield put(actions.createPageSuccess(newPage));
+      yield put(actions.setDialogOpen(false));
+    } else {
+      yield put(actions.createPageFailure("Failed to create page"));
+    }
   } catch (error) {
-    yield put(actions.createPageFailure("Failed to create page"));
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An error occurred while creating page";
+    yield put(actions.createPageFailure(errorMessage));
   }
 }
 
 // Update page saga
 function* updatePageSaga(action: ReturnType<typeof actions.updatePage>) {
   try {
-    yield call(simulateApiCall);
-    const updatedPage: Page = {
-      ...action.payload,
-      updatedAt: new Date().toLocaleString("zh-TW"),
-    };
-    const index = fakePages.findIndex((p) => p.id === action.payload.id);
-    if (index !== -1) {
-      fakePages[index] = updatedPage;
+    const { id, ...updateData } = action.payload;
+    const response: { success: boolean; data: MenuItem[] } = yield call(
+      updateMenuApi,
+      id,
+      updateData
+    );
+
+    if (response.success && response.data.length > 0) {
+      const updatedPage = menuItemToPage(response.data[0]);
+      yield put(actions.updatePageSuccess(updatedPage));
+      yield put(actions.setDialogOpen(false));
+    } else {
+      yield put(actions.updatePageFailure("Failed to update page"));
     }
-    yield put(actions.updatePageSuccess(updatedPage));
-    yield put(actions.setDialogOpen(false));
   } catch (error) {
-    yield put(actions.updatePageFailure("Failed to update page"));
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An error occurred while updating page";
+    yield put(actions.updatePageFailure(errorMessage));
   }
 }
 
 // Delete page saga
 function* deletePageSaga(action: ReturnType<typeof actions.deletePage>) {
   try {
-    yield call(simulateApiCall);
     const pageId = action.payload;
-    const index = fakePages.findIndex((p) => p.id === pageId);
-    if (index !== -1) {
-      fakePages.splice(index, 1);
+    const response: { success: boolean; data: MenuItem[] } = yield call(
+      deleteMenuApi,
+      pageId
+    );
+
+    if (response.success) {
+      yield put(actions.deletePageSuccess(pageId));
+      yield put(actions.setDeleteDialogOpen(false));
+    } else {
+      yield put(actions.deletePageFailure("Failed to delete page"));
     }
-    yield put(actions.deletePageSuccess(pageId));
-    yield put(actions.setDeleteDialogOpen(false));
   } catch (error) {
-    yield put(actions.deletePageFailure("Failed to delete page"));
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An error occurred while deleting page";
+    yield put(actions.deletePageFailure(errorMessage));
   }
 }
 
 // Reorder pages saga
 function* reorderPagesSaga(action: ReturnType<typeof actions.reorderPages>) {
   try {
-    yield call(simulateApiCall);
     const { fromId, toId } = action.payload;
 
-    // Simple reordering logic - in real implementation, this would be more complex
-    const fromIndex = fakePages.findIndex((p) => p.id === fromId);
-    const toIndex = fakePages.findIndex((p) => p.id === toId);
+    // First, fetch current pages to get the latest data
+    const fetchResponse: { success: boolean; data: MenuItem[] } = yield call(
+      fetchMenusApi
+    );
 
-    if (fromIndex !== -1 && toIndex !== -1) {
-      const [movedPage] = fakePages.splice(fromIndex, 1);
-      fakePages.splice(toIndex, 0, movedPage);
-
-      // Update order values
-      fakePages.forEach((page, index) => {
-        page.order = index + 1;
-        page.updatedAt = new Date().toLocaleString("zh-TW");
-      });
+    if (!fetchResponse.success) {
+      yield put(
+        actions.reorderPagesFailure(
+          "Failed to fetch current pages for reordering"
+        )
+      );
+      return;
     }
 
-    yield put(actions.reorderPagesSuccess([...fakePages]));
+    const pages = fetchResponse.data.map(menuItemToPage);
+    const fromIndex = pages.findIndex((p) => p.id === fromId);
+    const toIndex = pages.findIndex((p) => p.id === toId);
+
+    if (fromIndex !== -1 && toIndex !== -1) {
+      // Reorder the pages array
+      const [movedPage] = pages.splice(fromIndex, 1);
+      pages.splice(toIndex, 0, movedPage);
+
+      // Update sort values and send updates to backend
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        const newSort = i + 1;
+        if (page.sort !== newSort) {
+          yield call(updateMenuApi, page.id, { sort: newSort });
+          page.sort = newSort;
+        }
+      }
+
+      yield put(actions.reorderPagesSuccess(pages));
+    } else {
+      yield put(actions.reorderPagesFailure("Invalid page IDs for reordering"));
+    }
   } catch (error) {
-    yield put(actions.reorderPagesFailure("Failed to reorder pages"));
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An error occurred while reordering pages";
+    yield put(actions.reorderPagesFailure(errorMessage));
   }
 }
 

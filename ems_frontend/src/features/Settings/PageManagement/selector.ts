@@ -61,7 +61,7 @@ export const pagesTreeSelector = createSelector(
     const buildTree = (parentId: number, level: number): PageTreeItem[] => {
       return pages
         .filter((page) => page.parent === parentId)
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
         .map((page) => ({
           ...page,
           children: buildTree(page.id, level + 1),

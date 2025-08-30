@@ -40,8 +40,9 @@ const PageDialog: React.FC<PageDialogProps> = ({ onClose, translate }) => {
     title: "",
     url: "",
     icon: "HomeIcon",
-    order: 1,
-    isActive: true,
+    sort: 1,
+    is_enable: true,
+    is_show: true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,8 +54,9 @@ const PageDialog: React.FC<PageDialogProps> = ({ onClose, translate }) => {
         title: selectedPage.title,
         url: selectedPage.url,
         icon: selectedPage.icon,
-        order: selectedPage.order || 1,
-        isActive: selectedPage.isActive || true,
+        sort: selectedPage.sort || 1,
+        is_enable: selectedPage.is_enable,
+        is_show: selectedPage.is_show,
       });
     } else {
       setFormData({
@@ -62,8 +64,9 @@ const PageDialog: React.FC<PageDialogProps> = ({ onClose, translate }) => {
         title: "",
         url: "",
         icon: "HomeIcon",
-        order: 1,
-        isActive: true,
+        sort: 1,
+        is_enable: true,
+        is_show: true,
       });
     }
     setErrors({});
@@ -88,8 +91,8 @@ const PageDialog: React.FC<PageDialogProps> = ({ onClose, translate }) => {
       }
     }
 
-    if (formData.order < 1) {
-      newErrors.order = translate("order_must_be_positive");
+    if (formData.sort < 1) {
+      newErrors.sort = translate("order_must_be_positive");
     }
 
     setErrors(newErrors);
@@ -177,25 +180,37 @@ const PageDialog: React.FC<PageDialogProps> = ({ onClose, translate }) => {
             fullWidth
             type="number"
             label={translate("order")}
-            value={formData.order}
+            value={formData.sort}
             onChange={(e) =>
-              setFormData({ ...formData, order: parseInt(e.target.value) })
+              setFormData({ ...formData, sort: parseInt(e.target.value) })
             }
-            error={!!errors.order}
-            helperText={errors.order}
+            error={!!errors.sort}
+            helperText={errors.sort}
             inputProps={{ min: 1 }}
           />
 
           <FormControlLabel
             control={
               <Switch
-                checked={formData.isActive}
+                checked={formData.is_enable}
                 onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
+                  setFormData({ ...formData, is_enable: e.target.checked })
                 }
               />
             }
             label={translate("enable")}
+          />
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.is_show}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_show: e.target.checked })
+                }
+              />
+            }
+            label={translate("show")}
           />
         </Box>
       </DialogContent>

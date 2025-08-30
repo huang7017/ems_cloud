@@ -54,10 +54,7 @@ const pageManagementSlice = createSlice({
       state.loading = false;
     },
 
-    createPage: (
-      state,
-      action: PayloadAction<Omit<Page, "id" | "createdAt" | "updatedAt">>
-    ) => {
+    createPage: (state, _action: PayloadAction<Omit<Page, "id">>) => {
       state.loading = true;
       state.error = null;
     },
@@ -70,7 +67,7 @@ const pageManagementSlice = createSlice({
       state.loading = false;
     },
 
-    updatePage: (state, action: PayloadAction<Page>) => {
+    updatePage: (state, _action: PayloadAction<Page>) => {
       state.loading = true;
       state.error = null;
     },
@@ -88,7 +85,7 @@ const pageManagementSlice = createSlice({
       state.loading = false;
     },
 
-    deletePage: (state, action: PayloadAction<number>) => {
+    deletePage: (state, _action: PayloadAction<number>) => {
       state.loading = true;
       state.error = null;
     },
@@ -104,7 +101,7 @@ const pageManagementSlice = createSlice({
     // Reorder pages
     reorderPages: (
       state,
-      action: PayloadAction<{ fromId: number; toId: number }>
+      _action: PayloadAction<{ fromId: number; toId: number }>
     ) => {
       state.loading = true;
       state.error = null;

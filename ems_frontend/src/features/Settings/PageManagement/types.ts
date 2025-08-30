@@ -4,10 +4,9 @@ export interface Page {
   title: string;
   url: string;
   icon: string;
-  order?: number;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  sort: number;
+  is_enable: boolean;
+  is_show: boolean;
 }
 
 export interface PageManagementState {
@@ -29,7 +28,9 @@ export interface CreatePageRequest {
   title: string;
   url: string;
   icon: string;
-  order?: number;
+  sort: number;
+  is_enable: boolean;
+  is_show: boolean;
 }
 
 export interface UpdatePageRequest {
@@ -38,8 +39,9 @@ export interface UpdatePageRequest {
   title?: string;
   url?: string;
   icon?: string;
-  order?: number;
-  isActive?: boolean;
+  sort?: number;
+  is_enable?: boolean;
+  is_show?: boolean;
 }
 
 export interface DeletePageRequest {

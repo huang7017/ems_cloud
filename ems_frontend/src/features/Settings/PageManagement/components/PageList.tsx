@@ -108,8 +108,11 @@ const PageList: React.FC<PageListProps> = ({ onEdit, onDelete, translate }) => {
             primary={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography variant="body1">{page.title}</Typography>
-                {!page.isActive && (
+                {!page.is_enable && (
                   <Chip label="停用" size="small" color="error" />
+                )}
+                {!page.is_show && (
+                  <Chip label="隱藏" size="small" color="warning" />
                 )}
               </Box>
             }
@@ -120,8 +123,7 @@ const PageList: React.FC<PageListProps> = ({ onEdit, onDelete, translate }) => {
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {translate("order_info", {
-                    order: page.order || 0,
-                    updatedAt: page.updatedAt || "",
+                    order: page.sort || 0,
                   })}
                 </Typography>
               </Box>
