@@ -1,8 +1,8 @@
 /** 基础页面结构 - 有头部，有底部，有侧边导航 **/
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Route, Routes } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Sidebar from "../lib/components/Layout/Vertical/sidebar/Sidebar";
 import Header from "../lib/components/Layout/Vertical//header/Header";
 import { Box } from "@mui/material";
@@ -12,6 +12,7 @@ import { getIcon } from "../lib/components/Icon/iconMapper";
 import type { IState } from "../store/reducers";
 import { useAuthInit } from "../lib/hooks/useAuthInit";
 import { selectMenus, selectMenuLoading } from "../features/Menu";
+import { actions as pageActions } from "@/features/Settings/PageManagement/reducer";
 
 // ==================
 // 路由组件
@@ -88,10 +89,17 @@ const createSidebarStructure = (
 };
 
 const BasicLayout: React.FC = () => {
+  const dispatch = useDispatch();
   const customizer = useSelector((state: IState) => state.customizer);
   const currentLanguage = customizer.isLanguage || "en";
   const menus = useSelector(selectMenus);
   const menuLoading = useSelector(selectMenuLoading);
+
+  console.log(menus);
+
+  useEffect(() => {
+    dispatch(pageActions.fetchPages());
+  }, [dispatch]);
 
   // Initialize authentication state
   useAuthInit();
@@ -119,14 +127,14 @@ const BasicLayout: React.FC = () => {
           id: 3,
           parent: 2,
           title: "User Management",
-          url: "/user-management",
+          url: "/user",
           icon: "PeopleIcon",
         },
         {
           id: 4,
           parent: 2,
-          title: "Page Management",
-          url: "/page-management",
+          title: "Menu Management",
+          url: "/menu",
           icon: "PagesIcon",
         },
       ]);
@@ -157,14 +165,14 @@ const BasicLayout: React.FC = () => {
           id: 3,
           parent: 2,
           title: "User Management",
-          url: "/user-management",
+          url: "/user",
           icon: "PeopleIcon",
         },
         {
           id: 4,
           parent: 2,
-          title: "Page Management",
-          url: "/page-management",
+          title: "Menu Management",
+          url: "/menu",
           icon: "PagesIcon",
         },
       ]);
@@ -192,11 +200,11 @@ const BasicLayout: React.FC = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route
-              path="/settings/user-management"
+              path="/setting/user"
               element={<UserManagementPage lng={memoizedCurrentLanguage} />}
             />
             <Route
-              path="/settings/page-management"
+              path="/setting/menu"
               element={<PageManagementPage lng={memoizedCurrentLanguage} />}
             />
           </Routes>

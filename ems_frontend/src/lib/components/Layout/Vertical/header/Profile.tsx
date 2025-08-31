@@ -32,13 +32,9 @@ const Profile = () => {
   }, []);
 
   const handleLogout = useCallback(() => {
-    console.log("Profile: Logout button clicked");
     handleClose();
-    console.log("Profile: Dispatching logout action");
     dispatch(actions.logout());
-    console.log("Profile: Clearing menu state");
     dispatch(clearMenus());
-    console.log("Profile: Navigating to login page");
     navigate("/public/login");
   }, [dispatch, navigate, handleClose]);
 

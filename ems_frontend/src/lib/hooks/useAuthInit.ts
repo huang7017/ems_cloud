@@ -10,30 +10,13 @@ export const useAuthInit = () => {
   const isAuthenticated = useSelector(isAuthenticatedSelector);
 
   const initializeAuth = useCallback(() => {
-    console.log(
-      "useAuthInit: Initializing auth, isAuthenticated:",
-      isAuthenticated
-    );
-
     // Check if user is already authenticated via cookies
     const accessToken = Cookies.get("accessToken");
     const refreshToken = Cookies.get("refreshToken");
     const name = Cookies.get("name");
     const userId = Cookies.get("userId");
 
-    console.log(
-      "useAuthInit: Cookies - accessToken:",
-      !!accessToken,
-      "refreshToken:",
-      !!refreshToken,
-      "name:",
-      !!name,
-      "userId:",
-      !!userId
-    );
-
     if (accessToken && refreshToken && name && userId && !isAuthenticated) {
-      console.log("useAuthInit: Restoring user from cookies");
       // Reconstruct user data from cookies
       const userData = {
         access_token: accessToken,
@@ -49,7 +32,6 @@ export const useAuthInit = () => {
 
       dispatch(actions.setUser(userData));
     } else if (!accessToken && isAuthenticated) {
-      console.log("useAuthInit: No token but authenticated, clearing state");
       // If no token but still authenticated, clear the state
       dispatch(actions.logout());
     } else {

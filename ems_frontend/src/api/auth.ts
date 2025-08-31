@@ -8,17 +8,17 @@ interface LoginParams {
 
 export const fetchAuthLoginData = async (payload: LoginParams) => {
   try {
-    console.log("Sending login request to:", "/auth/login");
-    console.log("Payload:", payload);
+    // console.log("Sending login request to:", "/auth/login");
+    // console.log("Payload:", payload);
 
     const response = await axios.post("/auth/login", payload);
 
-    console.log("Full response:", response);
-    console.log("Response data:", response.data);
+    // console.log("Full response:", response);
+    // console.log("Response data:", response.data);
 
     return response.data;
   } catch (error) {
-    console.error("API Error:", error);
+    // console.error("API Error:", error);
     if (error && typeof error === "object" && "response" in error) {
       const axiosError = error as AxiosError;
       console.error("Response status:", axiosError.response?.status);
