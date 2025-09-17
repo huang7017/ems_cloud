@@ -19,7 +19,7 @@ func SetupRoutes(router *gin.Engine, authHandler *handlers.AuthHandler, menuHand
 	{
 		menuGroup.GET("", menuHandler.GetAll)  // 匹配 /menu
 		menuGroup.GET("/", menuHandler.GetAll) // 匹配 /menu/
-		menuGroup.POST("/", menuHandler.Create)
+		menuGroup.POST("", menuHandler.Create)
 		menuGroup.PUT("/:id", menuHandler.Update)
 		menuGroup.DELETE("/:id", menuHandler.Delete)
 	}

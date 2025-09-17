@@ -33,12 +33,22 @@ func (h *MenuHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: err.Error()})
 		return
 	}
-	memberID, exists := c.Get("member_id")
+	memberIDInterface, exists := c.Get("member_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, dto.APIResponse{Success: false, Error: "Unauthorized"})
 		return
 	}
-	response, err := h.menuAppService.Create(&menu, memberID.(uint))
+	memberIDStr, ok := memberIDInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID type"})
+		return
+	}
+	memberIDUint64, err := strconv.ParseUint(memberIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID format"})
+		return
+	}
+	response, err := h.menuAppService.Create(&menu, uint(memberIDUint64))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: err.Error()})
 	}
@@ -57,12 +67,22 @@ func (h *MenuHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: err.Error()})
 		return
 	}
-	memberID, exists := c.Get("member_id")
+	memberIDInterface, exists := c.Get("member_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, dto.APIResponse{Success: false, Error: "Unauthorized"})
 		return
 	}
-	response, err := h.menuAppService.Update(&menu, memberID.(uint))
+	memberIDStr, ok := memberIDInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID type"})
+		return
+	}
+	memberIDUint64, err := strconv.ParseUint(memberIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID format"})
+		return
+	}
+	response, err := h.menuAppService.Update(&menu, uint(memberIDUint64))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: err.Error()})
 	}
