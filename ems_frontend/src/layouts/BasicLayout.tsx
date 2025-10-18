@@ -11,7 +11,7 @@ import type { MenuitemsType } from "../lib/components/Layout/Vertical/sidebar/ty
 import { getIcon } from "../lib/components/Icon/iconMapper";
 import type { IState } from "../store/reducers";
 import { useAuthInit } from "../lib/hooks/useAuthInit";
-import { selectMenus, selectMenuLoading } from "../features/Menu";
+import { selectMenus, selectMenuLoading, fetchMenusStart } from "../features/Menu";
 import { actions as pageActions } from "@/features/Settings/PageManagement/reducer";
 
 // ==================
@@ -95,89 +95,36 @@ const BasicLayout: React.FC = () => {
   const menus = useSelector(selectMenus);
   const menuLoading = useSelector(selectMenuLoading);
 
-  console.log(menus);
+  console.log("menus:", menus, "menuLoading:", menuLoading);
 
   useEffect(() => {
-    dispatch(pageActions.fetchPages());
+    dispatch(pageActions.fetchSideBar());
   }, [dispatch]);
 
   // Initialize authentication state
   useAuthInit();
 
+  // Fetch menus on component mount
+  useEffect(() => {
+    dispatch(fetchMenusStart());
+  }, [dispatch]);
+
   // Memoize the sidebar structure to prevent unnecessary re-renders
   const sideBar: MenuitemsType[] = useMemo(() => {
-    if (menuLoading || !menus.length) {
-      // Return default menu structure while loading or if no menus
-      return createSidebarStructure([
-        {
-          id: 1,
-          parent: 0,
-          title: "Home",
-          url: "/",
-          icon: "HomeIcon",
-        },
-        {
-          id: 2,
-          parent: 0,
-          title: "Settings",
-          url: "/settings",
-          icon: "SettingsIcon",
-        },
-        {
-          id: 3,
-          parent: 2,
-          title: "User Management",
-          url: "/user",
-          icon: "PeopleIcon",
-        },
-        {
-          id: 4,
-          parent: 2,
-          title: "Menu Management",
-          url: "/menu",
-          icon: "PagesIcon",
-        },
-      ]);
+    // If menus are loaded from API, use them
+    if (menus.length > 0) {
+      try {
+        return createSidebarStructure(menus);
+      } catch (error) {
+        console.error("Error creating sidebar structure:", error);
+        return [];
+      }
     }
 
-    try {
-      // Use the fetched menus from the API
-      return createSidebarStructure(menus);
-    } catch (error) {
-      console.error("Error creating sidebar structure:", error);
-      // Fallback to default menu structure
-      return createSidebarStructure([
-        {
-          id: 1,
-          parent: 0,
-          title: "Home",
-          url: "/",
-          icon: "HomeIcon",
-        },
-        {
-          id: 2,
-          parent: 0,
-          title: "Settings",
-          url: "/settings",
-          icon: "SettingsIcon",
-        },
-        {
-          id: 3,
-          parent: 2,
-          title: "User Management",
-          url: "/user",
-          icon: "PeopleIcon",
-        },
-        {
-          id: 4,
-          parent: 2,
-          title: "Menu Management",
-          url: "/menu",
-          icon: "PagesIcon",
-        },
-      ]);
-    }
-  }, [menus, menuLoading]);
+    // While loading or if no menus yet, return empty array or minimal structure
+    // This prevents showing default menu when API data should be used
+    return [];
+  }, [menus]);
 
   // Memoize the current language to prevent unnecessary re-renders
   const memoizedCurrentLanguage = useMemo(

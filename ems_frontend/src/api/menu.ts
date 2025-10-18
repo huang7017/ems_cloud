@@ -18,6 +18,26 @@ export interface MenuApiResponse {
   error?: string;
 }
 
+
+export const fetchSideBarApi = async (): Promise<MenuApiResponse> => {
+  try {
+    console.log("Fetching menus from:", "/menu");
+
+    const response = await axios.get<MenuApiResponse>("/menu/sidebar");
+
+    console.log("Menu response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Menu API Error:", error);
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as AxiosError;
+      console.error("Response status:", axiosError.response?.status);
+      console.error("Response data:", axiosError.response?.data);
+    }
+    throw new Error("Failed to fetch menus");
+  }
+};
+
 export const fetchMenusApi = async (): Promise<MenuApiResponse> => {
   try {
     console.log("Fetching menus from:", "/menu");

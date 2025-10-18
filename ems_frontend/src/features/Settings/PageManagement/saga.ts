@@ -32,6 +32,28 @@ const pageToMenuItem = (page: Omit<Page, "id">): Omit<MenuItem, "id"> => ({
   is_show: page.is_show,
 });
 
+function* sideBarSaga() {
+  try {
+    const response: { success: boolean; data: MenuItem[] } = yield call(
+      fetchMenusApi
+    );
+
+    if (response.success) {
+      const pages = response.data.map(menuItemToPage);
+      yield put(actions.fetchPagesSuccess(pages));
+    } else {
+      yield put(actions.fetchPagesFailure("Failed to fetch pages"));
+    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An error occurred while fetching pages";
+    yield put(actions.fetchPagesFailure(errorMessage));
+  }
+}
+
+
 // Fetch pages saga
 function* fetchPagesSaga() {
   try {
@@ -183,6 +205,7 @@ function* reorderPagesSaga(action: ReturnType<typeof actions.reorderPages>) {
 // Root saga
 export function* pageManagementSaga() {
   yield takeLatest(actions.fetchPages.type, fetchPagesSaga);
+  yield takeLatest(actions.fetchSideBar.type, sideBarSaga);
   yield takeLatest(actions.createPage.type, createPageSaga);
   yield takeLatest(actions.updatePage.type, updatePageSaga);
   yield takeLatest(actions.deletePage.type, deletePageSaga);

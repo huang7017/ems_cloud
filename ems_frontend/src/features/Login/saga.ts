@@ -22,6 +22,12 @@ const LoginSaga = function* (action: PayloadAction<authLoginRequest>) {
       Cookies.set("refreshToken", response.data.refresh_token);
       Cookies.set("name", encodeURIComponent(response.data.member.name));
       Cookies.set("userId", response.data.member.id);
+      
+      // Store the first role ID if available
+      if (response.data.member_roles && response.data.member_roles.length > 0) {
+        Cookies.set("roleId", response.data.member_roles[0].id);
+      }
+      
       yield put(actions.setUser(response.data));
 
       // Fetch menus after successful login

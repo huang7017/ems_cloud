@@ -25,6 +25,16 @@ axios.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Get roleId from cookies and add X-RoleId header
+    const roleId = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("roleId="))
+      ?.split("=")[1];
+
+    if (roleId) {
+      config.headers["X-Role-ID"] = roleId;
+    }
+
     return config;
   },
   (error) => {

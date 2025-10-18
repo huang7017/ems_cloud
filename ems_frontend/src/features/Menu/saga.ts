@@ -4,13 +4,13 @@ import {
   fetchMenusSuccess,
   fetchMenusFailure,
 } from "./reducer";
-import { fetchMenusApi } from "../../api/menu";
+import { fetchSideBarApi } from "../../api/menu";
 import type { MenuItem } from "../../api/menu";
 
 function* fetchMenusSaga() {
   try {
     const response: { success: boolean; data: MenuItem[] } = yield call(
-      fetchMenusApi
+      fetchSideBarApi
     );
     if (response.success) {
       yield put(fetchMenusSuccess(response.data));

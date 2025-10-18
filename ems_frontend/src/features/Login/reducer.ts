@@ -41,6 +41,7 @@ const authSlice = createSlice({
       Cookies.remove("refreshToken");
       Cookies.remove("name");
       Cookies.remove("userId");
+      Cookies.remove("roleId");
 
       console.log("Reducer: Cookies cleared");
 

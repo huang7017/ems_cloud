@@ -45,6 +45,10 @@ const pageManagementSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
+    fetchSideBar: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
     fetchPagesSuccess: (state, action: PayloadAction<Page[]>) => {
       state.pages = action.payload;
       state.loading = false;
