@@ -10,7 +10,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { actions } from "../../../../../store/Customizer/reducer";
 import { FaBars } from "react-icons/fa";
 import Profile from "./Profile";
-import Language from "./Language";
+// import Language from "./Language";
 import type { IState } from "../../../../../store/reducers";
 
 const Header = () => {
@@ -58,7 +58,7 @@ const Header = () => {
 
         <Box flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
-          <Language />
+          {/* <Language /> */}
           {/* ------------------------------------------- */}
           {/* End Ecommerce Dropdown */}
           {/* ------------------------------------------- */}

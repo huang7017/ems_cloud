@@ -229,10 +229,6 @@ INSERT INTO menu
 (title, icon, url, parent, description, sort, is_enable, is_show, create_id, create_time, modify_id, modify_time)
 VALUES('user', 'PeopleIcon', '/user', 1, '用戶管理', 4, true, true, 1, '2023-12-25 06:15:41.929', 1, '2023-12-25 06:15:41.929');
 
-INSERT INTO menu
-(title, icon, url, parent, description, sort, is_enable, is_show, create_id, create_time, modify_id, modify_time)
-VALUES('partner', 'SettingsIcon', '/partner', 0, '商戶管理', 2, true, true, 1, '2023-12-22 05:31:14.126', 1, '2023-12-22 05:31:14.126');
-
 
 INSERT INTO power
 (menu_id, title, code, description, sort, is_enable, create_id, create_time, modify_id, modify_time)
@@ -280,10 +276,7 @@ VALUES(1, 5, 4, 1, '2024-01-04 18:27:35.126', 1, '2024-01-04 18:27:35.126');
 INSERT INTO role_power
 (role_id, menu_id, power_id, create_id, create_time, modify_id, modify_time)
 VALUES(1, 5, 5, 1, '2024-01-04 18:27:35.126', 1, '2024-01-04 18:27:35.126');
--- partner
-INSERT INTO role_power
-(role_id, menu_id, power_id, create_id, create_time, modify_id, modify_time)
-VALUES(1, 6, NULL, 1, '2024-01-04 18:27:35.126', 1, '2024-01-04 18:27:35.126');
+
 -- express 需要
 create table public.access_token(
     id bigserial PRIMARY KEY NOT NULL,
@@ -297,6 +290,84 @@ create table public.access_token(
 );
 
 
+======下面還沒新增還在規劃
+
+create table public.device(
+    id bigserial PRIMARY KEY NOT NULL,
+    sn varchar(256) not null,
+    "create_id" bigint   NOT NULL,
+    "create_time" timestamp   NOT NULL,
+    "modify_id" bigint   NOT NULL,
+    "modify_time" timestamp   NOT NULL
+);
+
+-- 業務角色註冊帳號，指派公司資料
+create table public.company(
+    id bigserial PRIMARY KEY NOT NULL,
+    "name" varchar(256) not null,
+    "address" varchar(512), -- 分公司地址
+    "contact_person" varchar(128), -- 聯絡人
+    "contact_phone" varchar(32), -- 聯絡電話
+    "is_active" boolean DEFAULT true, -- 是否啟用
+    "parent_id" bigint references public.company(id), -- 父公司
+    "create_id" bigint   NOT NULL,
+    "create_time" timestamp   NOT NULL,
+    "modify_id" bigint   NOT NULL,
+    "modify_time" timestamp   NOT NULL
+);
+
+-- 公司成員
+create table public.company_member(
+    id bigserial PRIMARY KEY NOT NULL,
+    "company_id" bigint references public.company(id) not null,
+    "member_id"  bigint references public.member(id) not null,
+    "create_id"  bigint   NOT NULL,
+    "create_time"timestamp   NOT NULL,
+    "modify_id"  bigint   NOT NULL,
+    "modify_time"timestamp   NOT NULL,
+    unique("company_id", "member_id")
+);
+
+-- 公司擁有硬體
+create table public.company_device(
+    id bigserial PRIMARY KEY NOT NULL,
+    "company_id" bigint references public.company(id) not null,
+    "device_id" bigint references public.device(id) not null, 
+    "content" jsonb not null, -- 硬體關聯資料
+    "create_id" bigint   NOT NULL,
+    "create_time" timestamp   NOT NULL,
+    "modify_id" bigint   NOT NULL,
+    "modify_time" timestamp   NOT NULL
+);
+
+INSERT INTO "role"
+(title, description, sort, is_enable, create_id, create_time, modify_id, modify_time)
+VALUES('company_manager', '', 0, true, 1, '2025-10-18', 1, '2025-10-18');
+
+INSERT INTO "member"
+( "name",  "email", "is_enable", "create_id", "create_time", "modify_id", "modify_time")
+VALUES( 'surewell.com','company_manager@surewell.com',true, 1, '2025-10-18', 1, '2025-10-18');
+
+INSERT INTO member_history
+("member_id", "hash", "salt", "error_count",  "create_id", "create_time", "modify_id", "modify_time")
+VALUES(2, '3792befe07dac37ccdb205c289c28f77','HWQiZ4lxTYGWujgW', 0, 1, '2020-06-04 11:53:46.988', 1, '2023-02-17 09:40:09.000');
+
+  
+ create table public.temperatures(
+    id bigserial PRIMARY KEY NOT NULL,
+    "timestamp"  timestamp   NOT NULL,
+    "temperature_id" text not null,
+    "temperature" double precision,
+    "humidity"   double precision
+);
 
 
+
+ create table public.meters(
+    id bigserial PRIMARY KEY NOT NULL,
+    "timestamp"  timestamp   NOT NULL,
+    "meter_id" text not null,
+    "k_wh" double precision,
+    "kw"   double precision
+);
 

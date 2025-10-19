@@ -67,22 +67,12 @@ func (h *MenuHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: err.Error()})
 		return
 	}
-	memberIDInterface, exists := c.Get("member_id")
+	memberID, exists := c.Get("member_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, dto.APIResponse{Success: false, Error: "Unauthorized"})
 		return
 	}
-	memberIDStr, ok := memberIDInterface.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID type"})
-		return
-	}
-	memberIDUint64, err := strconv.ParseUint(memberIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID format"})
-		return
-	}
-	response, err := h.menuAppService.Update(&menu, uint(memberIDUint64))
+	response, err := h.menuAppService.Update(&menu, memberID.(uint))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: err.Error()})
 	}
@@ -110,4 +100,16 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.APIResponse{Success: true})
+}
+
+func (h *MenuHandler) GetByRoleId(c *gin.Context) {
+	roleId := c.GetHeader("X-Role-ID")
+	roleID, err := strconv.ParseUint(roleId, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: "Invalid role ID format"})
+		return
+	}
+	response := h.menuAppService.GetByRoleId(uint(roleID))
+
+	c.JSON(http.StatusOK, response)
 }

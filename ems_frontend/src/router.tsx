@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import BasicLayout from "./layouts/BasicLayout";
 import PublicLayout from "./layouts/PublicLayout";

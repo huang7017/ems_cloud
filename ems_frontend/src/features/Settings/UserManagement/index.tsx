@@ -55,7 +55,7 @@ const UserManagementPage: React.FC<PageProps> = ({ lng }) => {
     dispatch(actions.fetchRoles());
   }, [dispatch]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     const tabNames = ["users", "roles", "access"] as const;
     dispatch(actions.setActiveTab(tabNames[newValue]));

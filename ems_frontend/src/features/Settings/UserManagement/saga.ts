@@ -1,6 +1,7 @@
 import { call, put, takeLatest, delay } from "redux-saga/effects";
 import { actions } from "./reducer";
-import type { User, Role, Permission } from "./types";
+import type { User, Role } from "./types";
+import { formatTimestamp } from "../../../helper/utils";
 
 // Fake data for users
 const fakeUsers: User[] = [
@@ -223,7 +224,7 @@ function* createUserSaga(action: any) {
     const newUser: User = {
       ...action.payload,
       id: Date.now().toString(),
-      lastLogin: new Date().toLocaleString("zh-TW"),
+      lastLogin: formatTimestamp(new Date()),
       avatar: action.payload.name.substring(0, 2).toUpperCase(),
     };
     yield put(actions.createUserSuccess(newUser));

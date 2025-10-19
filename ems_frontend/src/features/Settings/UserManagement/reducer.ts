@@ -39,7 +39,7 @@ const userManagementSlice = createSlice({
 
     createUser: (
       state,
-      action: PayloadAction<Omit<User, "id" | "lastLogin" | "avatar">>
+      _action: PayloadAction<Omit<User, "id" | "lastLogin" | "avatar">>
     ) => {
       state.loading = true;
       state.error = null;
@@ -53,7 +53,7 @@ const userManagementSlice = createSlice({
       state.loading = false;
     },
 
-    updateUser: (state, action: PayloadAction<User>) => {
+    updateUser: (state, _action: PayloadAction<User>) => {
       state.loading = true;
       state.error = null;
     },
@@ -71,7 +71,7 @@ const userManagementSlice = createSlice({
       state.loading = false;
     },
 
-    deleteUser: (state, action: PayloadAction<string>) => {
+    deleteUser: (state, _action: PayloadAction<string>) => {
       state.loading = true;
       state.error = null;
     },
@@ -98,7 +98,7 @@ const userManagementSlice = createSlice({
       state.loading = false;
     },
 
-    createRole: (state, action: PayloadAction<Omit<Role, "id">>) => {
+    createRole: (state, _action: PayloadAction<Omit<Role, "id">>) => {
       state.loading = true;
       state.error = null;
     },
@@ -111,7 +111,7 @@ const userManagementSlice = createSlice({
       state.loading = false;
     },
 
-    updateRole: (state, action: PayloadAction<Role>) => {
+    updateRole: (state, _action: PayloadAction<Role>) => {
       state.loading = true;
       state.error = null;
     },
@@ -129,7 +129,7 @@ const userManagementSlice = createSlice({
       state.loading = false;
     },
 
-    deleteRole: (state, action: PayloadAction<string>) => {
+    deleteRole: (state, _action: PayloadAction<string>) => {
       state.loading = true;
       state.error = null;
     },

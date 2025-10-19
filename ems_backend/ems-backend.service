@@ -1,0 +1,26 @@
+[Unit]
+Description=EMS Backend API Service
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user
+
+# 从 .env 文件加载环境变量
+EnvironmentFile=/home/ec2-user/.env
+
+# 执行程序
+ExecStart=/home/ec2-user/ems_backend_linux
+
+# 自动重启设置
+Restart=always
+RestartSec=10
+
+# 日志
+StandardOutput=append:/home/ec2-user/app.log
+StandardError=append:/home/ec2-user/error.log
+
+[Install]
+WantedBy=multi-user.target

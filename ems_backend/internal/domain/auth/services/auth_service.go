@@ -38,16 +38,18 @@ func (s *AuthService) Login(email, password string) (*entities.AuthResult, error
 	// 1. 查找會員
 	member, err := s.memberRepo.FindByEmail(email)
 	if err != nil {
+		fmt.Print(err)
 		return nil, errors.New("invalid password")
 	}
 
 	// 2. 尋找歷時密碼
 	memberHistory, err := s.memberHistoryRepo.LastMemberHistory(member.ID.Value())
 	if err != nil {
+		fmt.Print(err)
 		return nil, errors.New("invalid password")
 	}
 
-	fmt.Println(memberHistory)
+	// fmt.Println(memberHistory)
 	// 2. 驗證憑證
 	verify := memberHistory.ValidatePassword(password, memberHistory.Salt, memberHistory.Hash)
 	if !verify {

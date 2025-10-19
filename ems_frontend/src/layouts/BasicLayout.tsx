@@ -12,7 +12,6 @@ import { getIcon } from "../lib/components/Icon/iconMapper";
 import type { IState } from "../store/reducers";
 import { useAuthInit } from "../lib/hooks/useAuthInit";
 import { selectMenus, selectMenuLoading, fetchMenusStart } from "../features/Menu";
-import { actions as pageActions } from "@/features/Settings/PageManagement/reducer";
 
 // ==================
 // 路由组件
@@ -43,12 +42,16 @@ const createSidebarStructure = (
     is_show?: boolean;
   }[]
 ) => {
+  console.log("createSidebarStructure - Input data:", dbData);
+  
   const itemMap = new Map();
 
   // Filter out disabled or hidden menus
   const enabledMenus = dbData.filter(
     (item) => item.is_enable !== false && item.is_show !== false
   );
+
+  console.log("createSidebarStructure - Enabled menus:", enabledMenus);
 
   // Sort menus by sort order if available
   const sortedMenus = enabledMenus.sort(
@@ -85,7 +88,11 @@ const createSidebarStructure = (
   });
 
   // Filter out top-level items (those without a parent)
-  return Array.from(itemMap.values()).filter((item) => !item.parent);
+  const result = Array.from(itemMap.values()).filter((item) => !item.parent);
+  
+  console.log("createSidebarStructure - Final result:", result);
+  
+  return result;
 };
 
 const BasicLayout: React.FC = () => {
@@ -94,20 +101,20 @@ const BasicLayout: React.FC = () => {
   const currentLanguage = customizer.isLanguage || "en";
   const menus = useSelector(selectMenus);
   const menuLoading = useSelector(selectMenuLoading);
+  const { isAuthenticated } = useAuthInit();
 
-  console.log("menus:", menus, "menuLoading:", menuLoading);
+  console.log("BasicLayout - menus:", menus, "menuLoading:", menuLoading, "isAuthenticated:", isAuthenticated);
 
+  // Fetch menus after authentication is verified
   useEffect(() => {
-    dispatch(pageActions.fetchSideBar());
-  }, [dispatch]);
+    // Reset when menus are cleared (e.g., after logout)
+    if (!isAuthenticated || menus.length > 0 || menuLoading) {
+      return;
+    }
 
-  // Initialize authentication state
-  useAuthInit();
-
-  // Fetch menus on component mount
-  useEffect(() => {
+    console.log("BasicLayout - Fetching menus...");
     dispatch(fetchMenusStart());
-  }, [dispatch]);
+  }, [dispatch, isAuthenticated]);
 
   // Memoize the sidebar structure to prevent unnecessary re-renders
   const sideBar: MenuitemsType[] = useMemo(() => {

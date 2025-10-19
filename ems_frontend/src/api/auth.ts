@@ -27,3 +27,12 @@ export const fetchAuthLoginData = async (payload: LoginParams) => {
     throw error;
   }
 };
+
+export const fetchAuthRefreshData = async () => {
+  try {
+    const response = await axios.post("/auth/refresh");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

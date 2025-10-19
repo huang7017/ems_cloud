@@ -1,4 +1,4 @@
-package member_role
+package repositories
 
 import (
 	"ems_backend/internal/domain/member_role/entities"

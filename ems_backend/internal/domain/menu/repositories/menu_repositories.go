@@ -7,4 +7,5 @@ type MenuRepository interface {
 	Create(menu *entities.Menu, memberID uint) error
 	Update(menu *entities.Menu, memberID uint) error
 	Delete(id uint) error
+	GetByRoleId(roleId uint) ([]*entities.Menu, error)
 }

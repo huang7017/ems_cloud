@@ -15,6 +15,7 @@ export const useAuthInit = () => {
     const refreshToken = Cookies.get("refreshToken");
     const name = Cookies.get("name");
     const userId = Cookies.get("userId");
+    const roleId = Cookies.get("roleId");
 
     if (accessToken && refreshToken && name && userId && !isAuthenticated) {
       // Reconstruct user data from cookies
@@ -25,7 +26,7 @@ export const useAuthInit = () => {
           id: userId,
           name: decodeURIComponent(name),
         },
-        member_roles: [], // You might want to store this in cookies too
+        member_roles: roleId ? [{ id: roleId, name: "" }] : [],
         expires_in: 3600, // Default value
         token_type: "Bearer",
       };

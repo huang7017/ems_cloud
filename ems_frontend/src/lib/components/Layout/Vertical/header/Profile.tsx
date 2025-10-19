@@ -12,7 +12,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { actions } from "../../../../../features/Login/reducer";
 import { userSelector } from "../../../../../features/Login/selector";
-import { memberNameSelector } from "../../../../../features/Util/selector";
 import { clearMenus } from "../../../../../features/Menu";
 
 const Profile = () => {
@@ -21,7 +20,6 @@ const Profile = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const user = useSelector(userSelector);
-  const memberName = useSelector(memberNameSelector);
 
   const handleMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -45,15 +43,16 @@ const Profile = () => {
 
   const open = Boolean(anchorEl);
 
+  // Memoize member name from user object
+  const memberName = useMemo(() => {
+    return user?.member?.name || "";
+  }, [user]);
+
   // Memoize the avatar content to prevent unnecessary re-renders
   const avatarContent = useMemo(() => {
     return memberName ? memberName.charAt(0).toUpperCase() : "U";
   }, [memberName]);
 
-  // Memoize the user email to prevent unnecessary re-renders
-  const userEmail = useMemo(() => {
-    return user?.member?.email || "user@example.com";
-  }, [user]);
 
   return (
     <Box>
@@ -98,9 +97,6 @@ const Profile = () => {
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 {memberName || "User"}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {userEmail}
               </Typography>
             </Box>
           </Box>

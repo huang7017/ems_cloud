@@ -28,3 +28,7 @@ func (s *MenuService) Update(menu *entities.Menu, memberID uint) error {
 func (s *MenuService) Delete(id uint) error {
 	return s.menuRepo.Delete(id)
 }
+
+func (s *MenuService) GetByRoleId(roleId uint) ([]*entities.Menu, error) {
+	return s.menuRepo.GetByRoleId(roleId)
+}
