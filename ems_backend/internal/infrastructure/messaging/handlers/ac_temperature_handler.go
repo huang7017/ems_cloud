@@ -45,12 +45,12 @@ func (h *ACTemperatureHandler) HandleMessage(ctx context.Context, queueName stri
 	// 2. 解析时间戳（从毫秒转换为 time.Time）
 	var timestamp time.Time
 	if data.Timestamp > 0 {
-		// 将毫秒时间戳转换为秒和纳秒
-		timestamp = time.Unix(data.Timestamp/1000, (data.Timestamp%1000)*int64(time.Millisecond))
+		// 将毫秒时间戳转换为秒和纳秒，并确保使用 UTC 时区
+		timestamp = time.Unix(data.Timestamp/1000, (data.Timestamp%1000)*int64(time.Millisecond)).UTC()
 		log.Printf("Parsed timestamp: %s", timestamp.Format(time.RFC3339))
 	} else {
 		log.Printf("⚠️  Invalid timestamp, using current time")
-		timestamp = time.Now()
+		timestamp = time.Now().UTC()
 	}
 
 	// 3. 调用 Application Service 保存数据

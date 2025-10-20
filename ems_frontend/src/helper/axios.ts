@@ -2,6 +2,7 @@
 
 import axios, { type AxiosResponse } from "axios";
 import type { AxiosError } from "axios";
+import Cookies from "js-cookie";
 import { config } from "../config/environment";
 
 // Set base URL for backend API
@@ -107,7 +108,22 @@ axios.interceptors.response.use(
 
       try {
         // Try to refresh the token
-        await axios.post("/auth/refresh");
+        const refreshToken = Cookies.get("refreshToken");
+        const refreshResponse = await axios.post("/auth/refresh", {
+          refresh_token: refreshToken
+        });
+        
+        // Extract new tokens from response and update cookies
+        if (refreshResponse.data?.success && refreshResponse.data?.data) {
+          const { access_token, refresh_token } = refreshResponse.data.data;
+          
+          if (access_token) {
+            Cookies.set("accessToken", access_token);
+          }
+          if (refresh_token) {
+            Cookies.set("refreshToken", refresh_token);
+          }
+        }
         
         // Token refreshed successfully
         isRefreshing = false;

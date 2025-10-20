@@ -264,31 +264,25 @@ func (s *DashboardAreaService) calculateAreaStatistics(areaInfo *dto.AreaInfo) d
 }
 
 // calculateHeatIndexForArea - 計算體感溫度（區域服務專用）
+// 使用簡化的熱指數公式（直接使用攝氏度）
 func calculateHeatIndexForArea(temperature, humidity float64) float64 {
 	if temperature < 27 {
 		return temperature
 	}
 
-	T := temperature*9/5 + 32
+	T := temperature
 	RH := humidity
 
-	HI := -42.379 +
-		2.04901523*T +
-		10.14333127*RH -
-		0.22475541*T*RH -
-		0.00683783*T*T -
-		0.05481717*RH*RH +
-		0.00122874*T*T*RH +
-		0.00085282*T*RH*RH -
-		0.00000199*T*T*RH*RH
+	// 使用攝氏度的簡化體感溫度公式
+	HI := -8.78469476 +
+		1.61139411*T +
+		2.338548838*RH -
+		0.14611605*T*RH -
+		0.012308094*T*T -
+		0.016424828*RH*RH +
+		0.002211732*T*T*RH +
+		0.00072546*T*RH*RH -
+		0.000003582*T*T*RH*RH
 
-	if RH < 13 && T >= 80 && T <= 112 {
-		adjustment := ((13 - RH) / 4) * math.Sqrt((17-math.Abs(T-95))/17)
-		HI -= adjustment
-	} else if RH > 85 && T >= 80 && T <= 87 {
-		adjustment := ((RH - 85) / 10) * ((87 - T) / 5)
-		HI += adjustment
-	}
-
-	return (HI - 32) * 5 / 9
+	return HI
 }

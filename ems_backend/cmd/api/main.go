@@ -160,7 +160,7 @@ func initDatabase() (*gorm.DB, error) {
 		" user=" + os.Getenv("DB_USER") +
 		" password=" + os.Getenv("DB_CODE") +
 		" dbname=" + os.Getenv("DB_NAME") +
-		" sslmode=disable TimeZone=Asia/Shanghai"
+		" sslmode=require TimeZone=UTC"
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
