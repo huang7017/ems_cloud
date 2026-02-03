@@ -91,3 +91,6 @@ export const deleteMenuApi = async (id: number): Promise<MenuApiResponse> => {
     throw new Error("Failed to delete menu");
   }
 };
+
+// Alias for consistency with other API files
+export const fetchMenus = fetchMenusApi;

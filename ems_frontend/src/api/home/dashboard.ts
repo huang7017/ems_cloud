@@ -146,15 +146,43 @@ export interface AreaStatistics {
   avg_heat_index: number;
   min_temperature: number;
   max_temperature: number;
+  // Package AC 統計
   total_ac_packages: number;
   running_ac_count: number;
+  // VRF 統計
+  total_vrfs: number;
+  total_vrf_units: number;
+  running_vrf_unit_count: number;
   last_updated_at?: string;
+}
+
+// Package AC 資訊
+export interface CompressorStatus {
+  compressor_id: string;
+  address: number;
+  is_running: boolean;
+  has_error: boolean;
 }
 
 export interface ACPackageInfo {
   package_id: string;
   package_name: string;
-  // compressors removed as per requirements
+  compressors: CompressorStatus[];
+}
+
+// VRF 系統資訊
+export interface ACUnitInfo {
+  unit_id: string;
+  name: string;
+  location: string;
+  number: number;
+  is_running: boolean;
+}
+
+export interface VRFInfo {
+  vrf_id: string;
+  address: string;
+  ac_units: ACUnitInfo[];
 }
 
 export interface AreaInfo {
@@ -164,6 +192,7 @@ export interface AreaInfo {
   meters: MeterInfo[];
   sensors: TemperatureSensorInfo[];
   ac_packages: ACPackageInfo[];
+  vrfs: VRFInfo[];
 }
 
 export interface DashboardAreaRequest {

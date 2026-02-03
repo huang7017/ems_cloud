@@ -41,17 +41,32 @@ func (r *MenuRepository) Create(menu *entities.Menu, memberID uint) error {
 }
 
 func (r *MenuRepository) Update(menu *entities.Menu, memberID uint) error {
-	return r.db.Model(&models.MenuModel{}).Where("id = ?", menu.ID).Updates(map[string]interface{}{
-		"title":       menu.Title,
-		"icon":        menu.Icon,
-		"url":         menu.Url,
-		"parent":      menu.Parent,
-		"sort":        menu.Sort,
-		"is_enable":   menu.IsEnable,
-		"is_show":     menu.IsShow,
-		"modify_id":   memberID,
-		"modify_time": time.Now(),
-	}).Error
+	// 使用 Select 明確指定要更新的字段，避免 GORM 跳過零值
+	result := r.db.Model(&models.MenuModel{}).
+		Where("id = ?", menu.ID).
+		Select("title", "icon", "url", "parent", "sort", "is_enable", "is_show", "modify_id", "modify_time").
+		Updates(map[string]interface{}{
+			"title":       menu.Title,
+			"icon":        menu.Icon,
+			"url":         menu.Url,
+			"parent":      menu.Parent,
+			"sort":        menu.Sort,
+			"is_enable":   menu.IsEnable,
+			"is_show":     menu.IsShow,
+			"modify_id":   memberID,
+			"modify_time": time.Now(),
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// 檢查是否有記錄被更新
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
 func (r *MenuRepository) Delete(id uint) error {

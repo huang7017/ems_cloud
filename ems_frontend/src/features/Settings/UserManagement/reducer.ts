@@ -129,11 +129,11 @@ const userManagementSlice = createSlice({
       state.loading = false;
     },
 
-    deleteRole: (state, _action: PayloadAction<string>) => {
+    deleteRole: (state, _action: PayloadAction<number>) => {
       state.loading = true;
       state.error = null;
     },
-    deleteRoleSuccess: (state, action: PayloadAction<string>) => {
+    deleteRoleSuccess: (state, action: PayloadAction<number>) => {
       state.roles = state.roles.filter((role) => role.id !== action.payload);
       state.loading = false;
     },
@@ -157,7 +157,7 @@ const userManagementSlice = createSlice({
     updatePermission: (
       state,
       action: PayloadAction<{
-        roleId: string;
+        roleId: number;
         permissionId: string;
         checked: boolean;
       }>

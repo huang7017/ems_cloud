@@ -86,7 +86,7 @@ const UserManagementPage: React.FC<PageProps> = ({ lng }) => {
   };
 
   const handlePermissionChange = (
-    roleId: string,
+    roleId: number,
     permissionId: string,
     checked: boolean
   ) => {
@@ -225,7 +225,6 @@ const UserManagementPage: React.FC<PageProps> = ({ lng }) => {
               roles={roles}
               onEditRole={handleEditRole}
               onPermissionChange={handlePermissionChange}
-              translate={translate}
             />
           </TabPanel>
 

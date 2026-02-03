@@ -9,6 +9,13 @@ import (
 	"errors"
 )
 
+// Role constants for dashboard access control
+const (
+	DashboardRoleSystemAdmin    = 1
+	DashboardRoleCompanyManager = 2
+	DashboardRoleCompanyUser    = 3
+)
+
 type DashboardApplicationService struct {
 	companyRepo       companyRepo.CompanyRepository
 	companyDeviceRepo deviceRepo.CompanyDeviceRepository
@@ -27,10 +34,22 @@ func NewDashboardApplicationService(
 	}
 }
 
+// getAccessibleCompanies - 根據角色獲取可訪問的公司列表
+// SystemAdmin: 可以看所有公司
+// CompanyManager/CompanyUser: 只能看自己關聯的公司
+func (s *DashboardApplicationService) getAccessibleCompanies(memberID uint, roleID uint) ([]*companyEntities.Company, error) {
+	if roleID == DashboardRoleSystemAdmin {
+		// SystemAdmin 可以看所有公司
+		return s.companyRepo.FindAll()
+	}
+	// CompanyManager 和 CompanyUser 只能看自己關聯的公司
+	return s.companyRepo.FindByMemberID(memberID)
+}
+
 // GetCompanyList - 獲取用戶有權限的公司列表
-func (s *DashboardApplicationService) GetCompanyList(memberID uint, req *dto.DashboardCompanyListRequest) (*dto.DashboardCompanyListResponse, error) {
-	// 獲取該成員關聯的所有公司
-	companies, err := s.companyRepo.FindByMemberID(memberID)
+func (s *DashboardApplicationService) GetCompanyList(memberID uint, roleID uint, req *dto.DashboardCompanyListRequest) (*dto.DashboardCompanyListResponse, error) {
+	// 根據角色獲取可訪問的公司
+	companies, err := s.getAccessibleCompanies(memberID, roleID)
 	if err != nil {
 		// 返回更詳細的錯誤信息
 		return nil, errors.New("failed to find companies for member: " + err.Error())
@@ -57,9 +76,9 @@ func (s *DashboardApplicationService) GetCompanyList(memberID uint, req *dto.Das
 }
 
 // GetAreaList - 獲取指定公司的區域列表
-func (s *DashboardApplicationService) GetAreaList(memberID uint, req *dto.DashboardAreaListRequest) (*dto.DashboardAreaListResponse, error) {
+func (s *DashboardApplicationService) GetAreaList(memberID uint, roleID uint, req *dto.DashboardAreaListRequest) (*dto.DashboardAreaListResponse, error) {
 	// 1. 驗證用戶是否有權限訪問該公司
-	companies, err := s.companyRepo.FindByMemberID(memberID)
+	companies, err := s.getAccessibleCompanies(memberID, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -113,9 +132,9 @@ func (s *DashboardApplicationService) GetAreaList(memberID uint, req *dto.Dashbo
 }
 
 // GetMeterData - 獲取電表數據
-func (s *DashboardApplicationService) GetMeterData(memberID uint, req *dto.DashboardMeterRequest) (*dto.DashboardMeterResponse, error) {
-	// 1. 獲取該成員關聯的所有公司
-	companies, err := s.companyRepo.FindByMemberID(memberID)
+func (s *DashboardApplicationService) GetMeterData(memberID uint, roleID uint, req *dto.DashboardMeterRequest) (*dto.DashboardMeterResponse, error) {
+	// 1. 根據角色獲取可訪問的公司
+	companies, err := s.getAccessibleCompanies(memberID, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -240,9 +259,9 @@ func (s *DashboardApplicationService) getMeterDataByID(meterID string, req *dto.
 }
 
 // GetDashboardSummary - 獲取 Dashboard 總覽
-func (s *DashboardApplicationService) GetDashboardSummary(memberID uint, req *dto.DashboardSummaryRequest) (*dto.DashboardSummaryResponse, error) {
-	// 獲取該成員關聯的所有公司
-	companies, err := s.companyRepo.FindByMemberID(memberID)
+func (s *DashboardApplicationService) GetDashboardSummary(memberID uint, roleID uint, req *dto.DashboardSummaryRequest) (*dto.DashboardSummaryResponse, error) {
+	// 根據角色獲取可訪問的公司
+	companies, err := s.getAccessibleCompanies(memberID, roleID)
 	if err != nil {
 		// 返回更詳細的錯誤信息
 		return nil, errors.New("failed to find companies for member: " + err.Error())

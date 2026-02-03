@@ -36,11 +36,16 @@ func (s *MenuApplicationService) GetAll() ([]*dto.MenuResponse, error) {
 }
 
 func (s *MenuApplicationService) Create(menu *dto.MenuRequest, memberID uint) (*dto.APIResponse, error) {
+	var parent uint
+	if menu.Parent != 0 {
+		parent = menu.Parent
+	}
+
 	err := s.menuService.Create(&entities.Menu{
 		Title:    menu.Title,
 		Icon:     menu.Icon,
 		Url:      menu.Url,
-		Parent:   menu.Parent,
+		Parent:   parent,
 		Sort:     menu.Sort,
 		IsEnable: menu.IsEnable,
 		IsShow:   menu.IsShow,

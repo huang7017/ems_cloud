@@ -18,12 +18,40 @@ import { selectMenus, selectMenuLoading, fetchMenusStart } from "../features/Men
 // ==================
 const HomePage = React.lazy(() => import("../features/Home/index"));
 
+const TemperaturePage = React.lazy(
+  () => import("../features/Temperature/index")
+);
+
+const EnergyPage = React.lazy(
+  () => import("../features/Energy/index")
+);
+
 const UserManagementPage = React.lazy(
   () => import("../features/Settings/UserManagement/index")
 );
 
 const PageManagementPage = React.lazy(
   () => import("../features/Settings/PageManagement/index")
+);
+
+const RoleManagementPage = React.lazy(
+  () => import("../features/Settings/RoleManagement/index")
+);
+
+const PowerManagementPage = React.lazy(
+  () => import("../features/Settings/PowerManagement/index")
+);
+
+const DeviceManagementPage = React.lazy(
+  () => import("../features/Settings/DeviceManagement/index")
+);
+
+const CompanyManagementPage = React.lazy(
+  () => import("../features/Settings/CompanyManagement/index")
+);
+
+const ScheduleManagementPage = React.lazy(
+  () => import("../features/Settings/ScheduleManagement/index")
 );
 
 // ==================
@@ -42,16 +70,12 @@ const createSidebarStructure = (
     is_show?: boolean;
   }[]
 ) => {
-  console.log("createSidebarStructure - Input data:", dbData);
-  
   const itemMap = new Map();
 
   // Filter out disabled or hidden menus
   const enabledMenus = dbData.filter(
     (item) => item.is_enable !== false && item.is_show !== false
   );
-
-  console.log("createSidebarStructure - Enabled menus:", enabledMenus);
 
   // Sort menus by sort order if available
   const sortedMenus = enabledMenus.sort(
@@ -88,11 +112,7 @@ const createSidebarStructure = (
   });
 
   // Filter out top-level items (those without a parent)
-  const result = Array.from(itemMap.values()).filter((item) => !item.parent);
-  
-  console.log("createSidebarStructure - Final result:", result);
-  
-  return result;
+  return Array.from(itemMap.values()).filter((item) => !item.parent);
 };
 
 const BasicLayout: React.FC = () => {
@@ -103,8 +123,6 @@ const BasicLayout: React.FC = () => {
   const menuLoading = useSelector(selectMenuLoading);
   const { isAuthenticated } = useAuthInit();
 
-  console.log("BasicLayout - menus:", menus, "menuLoading:", menuLoading, "isAuthenticated:", isAuthenticated);
-
   // Fetch menus after authentication is verified
   useEffect(() => {
     // Reset when menus are cleared (e.g., after logout)
@@ -112,7 +130,6 @@ const BasicLayout: React.FC = () => {
       return;
     }
 
-    console.log("BasicLayout - Fetching menus...");
     dispatch(fetchMenusStart());
   }, [dispatch, isAuthenticated]);
 
@@ -153,6 +170,8 @@ const BasicLayout: React.FC = () => {
         >
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/analyze/temperature" element={<TemperaturePage />} />
+            <Route path="/analyze/energy" element={<EnergyPage />} />
             <Route
               path="/setting/user"
               element={<UserManagementPage lng={memoizedCurrentLanguage} />}
@@ -161,6 +180,11 @@ const BasicLayout: React.FC = () => {
               path="/setting/menu"
               element={<PageManagementPage lng={memoizedCurrentLanguage} />}
             />
+            <Route path="/setting/role" element={<RoleManagementPage />} />
+            <Route path="/setting/power" element={<PowerManagementPage />} />
+            <Route path="/setting/device" element={<DeviceManagementPage />} />
+            <Route path="/setting/company" element={<CompanyManagementPage />} />
+            <Route path="/setting/schedule" element={<ScheduleManagementPage />} />
           </Routes>
         </Box>
       </Page>

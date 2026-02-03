@@ -6,6 +6,11 @@ import { reducer as UtilReducer } from "../features/Util/reducer";
 import { reducer as HomeReducer } from "../features/Home/reducer";
 import { reducer as UserManagementReducer } from "../features/Settings/UserManagement/reducer";
 import { default as PageManagementReducer } from "../features/Settings/PageManagement/reducer";
+import { reducer as RoleManagementReducer } from "../features/Settings/RoleManagement/reducer";
+import { reducer as PowerManagementReducer } from "../features/Settings/PowerManagement/reducer";
+import { reducer as DeviceManagementReducer } from "../features/Settings/DeviceManagement/reducer";
+import CompanyManagementReducer from "../features/Settings/CompanyManagement/reducer";
+import ScheduleManagementReducer from "../features/Settings/ScheduleManagement/reducer";
 import MenuReducer from "../features/Menu/reducer";
 
 const rootReducer = combineReducers({
@@ -15,6 +20,11 @@ const rootReducer = combineReducers({
   home: HomeReducer,
   userManagement: UserManagementReducer,
   pageManagement: PageManagementReducer,
+  roleManagement: RoleManagementReducer,
+  powerManagement: PowerManagementReducer,
+  deviceManagement: DeviceManagementReducer,
+  companyManagement: CompanyManagementReducer,
+  scheduleManagement: ScheduleManagementReducer,
   menu: MenuReducer,
 });
 

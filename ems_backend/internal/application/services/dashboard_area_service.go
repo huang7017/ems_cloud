@@ -8,6 +8,7 @@ import (
 	meterRepo "ems_backend/internal/domain/meter/repositories"
 	temperatureRepo "ems_backend/internal/domain/temperature/repositories"
 	"errors"
+	"log"
 	"math"
 )
 
@@ -32,10 +33,20 @@ func NewDashboardAreaService(
 	}
 }
 
+// getAccessibleCompanies - 根據角色獲取可訪問的公司列表
+func (s *DashboardAreaService) getAccessibleCompanies(memberID uint, roleID uint) ([]*companyEntities.Company, error) {
+	if roleID == DashboardRoleSystemAdmin {
+		// SystemAdmin 可以看所有公司
+		return s.companyRepo.FindAll()
+	}
+	// CompanyManager 和 CompanyUser 只能看自己關聯的公司
+	return s.companyRepo.FindByMemberID(memberID)
+}
+
 // GetAreaOverview - 獲取區域總覽（包含完整的區域解構和統計）
-func (s *DashboardAreaService) GetAreaOverview(memberID uint, req *dto.DashboardAreaRequest) (*dto.DashboardAreaResponse, error) {
-	// 1. 獲取該成員關聯的所有公司
-	companies, err := s.companyRepo.FindByMemberID(memberID)
+func (s *DashboardAreaService) GetAreaOverview(memberID uint, roleID uint, req *dto.DashboardAreaRequest) (*dto.DashboardAreaResponse, error) {
+	// 1. 根據角色獲取可訪問的公司
+	companies, err := s.getAccessibleCompanies(memberID, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +82,10 @@ func (s *DashboardAreaService) GetAreaOverview(memberID uint, req *dto.Dashboard
 
 	// 4. 解析每個設備並構建區域信息
 	areaMap := make(map[string]*dto.AreaInfo)
+	// 收集每個區域的感測器 IDs（用於後續批量查詢）
+	areaSensorIDs := make(map[string]map[string]bool)
+	// 收集所有唯一的感測器 IDs（全域）
+	allSensorIDs := make(map[string]bool)
 
 	for _, device := range devices {
 		content, err := device.ParseContent()
@@ -87,11 +102,14 @@ func (s *DashboardAreaService) GetAreaOverview(memberID uint, req *dto.Dashboard
 					Meters:     make([]dto.MeterInfo, 0),
 					Sensors:    make([]dto.TemperatureSensorInfo, 0),
 					ACPackages: make([]dto.ACPackageInfo, 0),
+					VRFs:       make([]dto.VRFInfo, 0),
 					Statistics: dto.AreaStatistics{},
 				}
+				areaSensorIDs[area.ID] = make(map[string]bool)
 			}
 
 			areaInfo := areaMap[area.ID]
+			sensorIDs := areaSensorIDs[area.ID]
 
 			// 收集電表數據
 			for _, meterMapping := range area.MeterMappings {
@@ -101,13 +119,12 @@ func (s *DashboardAreaService) GetAreaOverview(memberID uint, req *dto.Dashboard
 				}
 			}
 
-			// 收集溫度感測器數據（從 packages 中獲取）
-			sensorIDs := make(map[string]bool)
+			// 處理 Package AC - 根據 ac_mappings 關聯
 			for _, pkg := range content.Packages {
-				// 檢查該 package 是否屬於此區域
+				// 檢查該 package 是否屬於此區域 (使用 IsPackage() 方法)
 				belongsToArea := false
 				for _, acMapping := range area.ACMappings {
-					if acMapping.ACID == pkg.ID {
+					if acMapping.ACID == pkg.ID && acMapping.IsPackage() {
 						belongsToArea = true
 						break
 					}
@@ -132,18 +149,159 @@ func (s *DashboardAreaService) GetAreaOverview(memberID uint, req *dto.Dashboard
 
 					areaInfo.ACPackages = append(areaInfo.ACPackages, acPackage)
 
-					// 收集溫度感測器
+					// 收集溫度感測器 - 從 pkg.TemperatureSensorID
+					if pkg.TemperatureSensorID != "" {
+						sensorIDs[pkg.TemperatureSensorID] = true
+						allSensorIDs[pkg.TemperatureSensorID] = true
+					}
+					// 收集溫度感測器 - 從 pkg.Temperatures[]
 					for _, temp := range pkg.Temperatures {
-						sensorIDs[temp.SensorID] = true
+						if temp.TemperatureSensorID != "" {
+							sensorIDs[temp.TemperatureSensorID] = true
+							allSensorIDs[temp.TemperatureSensorID] = true
+						} else if temp.SensorID != "" {
+							sensorIDs[temp.SensorID] = true
+							allSensorIDs[temp.SensorID] = true
+						}
 					}
 				}
 			}
 
-			// 處理每個溫度感測器
+			// 處理 VRF - ac_mappings.ac_id 指向的是 vrfs[].acs[] 內的個別 unit ID
+			// 建立 VRF unit ID 到 VRF 的映射，以便快速查找
+			vrfUnitToVRF := make(map[string]int) // unit ID -> VRF index
+			for vrfIdx, vrf := range content.VRFs {
+				for _, unit := range vrf.GetUnits() {
+					vrfUnitToVRF[unit.ID] = vrfIdx
+				}
+			}
+
+			// 追蹤已添加到此區域的 VRF（避免重複）
+			addedVRFs := make(map[string]bool)
+			// 追蹤每個 VRF 中屬於此區域的 unit IDs
+			vrfAreaUnits := make(map[string]map[string]bool) // VRF ID -> set of unit IDs
+
+			for _, acMapping := range area.ACMappings {
+				if acMapping.IsVRF() {
+					// ac_id 是個別 VRF unit 的 ID
+					if vrfIdx, exists := vrfUnitToVRF[acMapping.ACID]; exists {
+						vrf := content.VRFs[vrfIdx]
+						if vrfAreaUnits[vrf.ID] == nil {
+							vrfAreaUnits[vrf.ID] = make(map[string]bool)
+						}
+						vrfAreaUnits[vrf.ID][acMapping.ACID] = true
+					}
+				}
+			}
+
+			// 為每個有關聯 unit 的 VRF 添加信息
+			for _, vrf := range content.VRFs {
+				unitIDs, hasUnits := vrfAreaUnits[vrf.ID]
+				if !hasUnits {
+					continue
+				}
+
+				if addedVRFs[vrf.ID] {
+					continue
+				}
+				addedVRFs[vrf.ID] = true
+
+				// 添加 VRF 信息，只包含屬於此區域的 units
+				vrfInfo := dto.VRFInfo{
+					VRFID:   vrf.ID,
+					Address: vrf.Address,
+					ACUnits: make([]dto.ACUnitInfo, 0),
+				}
+
+				for _, unit := range vrf.GetUnits() {
+					// 只添加屬於此區域的 units
+					if !unitIDs[unit.ID] {
+						continue
+					}
+
+					unitName := ""
+					if unit.Name != nil {
+						unitName = *unit.Name
+					}
+					unitLocation := ""
+					if unit.Location != nil {
+						unitLocation = *unit.Location
+					}
+					unitNumber := 0
+					if unit.Number != nil {
+						unitNumber = *unit.Number
+					}
+
+					vrfInfo.ACUnits = append(vrfInfo.ACUnits, dto.ACUnitInfo{
+						UnitID:    unit.ID,
+						Name:      unitName,
+						Location:  unitLocation,
+						Number:    unitNumber,
+						IsRunning: unit.IsRunning(), // 使用 IsRunning() 方法處理不同狀態格式
+					})
+
+					// 收集 VRF unit 的溫度感測器
+					if unit.TemperatureSensorID != "" {
+						sensorIDs[unit.TemperatureSensorID] = true
+						allSensorIDs[unit.TemperatureSensorID] = true
+					}
+				}
+
+				areaInfo.VRFs = append(areaInfo.VRFs, vrfInfo)
+
+				// 收集 VRF 溫度感測器 - 從 TemperatureMappings
+				for _, tempMapping := range vrf.TemperatureMappings {
+					if tempMapping.TemperatureSensorID != "" {
+						sensorIDs[tempMapping.TemperatureSensorID] = true
+						allSensorIDs[tempMapping.TemperatureSensorID] = true
+					}
+				}
+			}
+		}
+	}
+
+	// 4.5 批量查詢所有溫度感測器的最新數據（一次查詢取代 N 次查詢）
+	sensorIDList := make([]string, 0, len(allSensorIDs))
+	for id := range allSensorIDs {
+		sensorIDList = append(sensorIDList, id)
+	}
+
+	sensorDataMap := make(map[string]*dto.TemperatureSensorInfo)
+	if len(sensorIDList) > 0 {
+		log.Printf("[AreaOverview] Batch querying %d temperature sensors", len(sensorIDList))
+		latestDataMap, err := s.temperatureRepo.GetLatestByTemperatureIDs(sensorIDList)
+		if err != nil {
+			log.Printf("[AreaOverview] Error batch querying temperature sensors: %v", err)
+		} else {
+			// 構建感測器數據映射
+			for sensorID, latestTemp := range latestDataMap {
+				if latestTemp != nil {
+					sensorDataMap[sensorID] = &dto.TemperatureSensorInfo{
+						SensorID: sensorID,
+						LatestData: &dto.TemperatureReading{
+							Timestamp:   latestTemp.Timestamp,
+							Temperature: latestTemp.Temperature,
+							Humidity:    latestTemp.Humidity,
+							HeatIndex:   calculateHeatIndexForArea(latestTemp.Temperature, latestTemp.Humidity),
+						},
+					}
+				}
+			}
+		}
+		log.Printf("[AreaOverview] Batch query completed, got data for %d sensors", len(sensorDataMap))
+	}
+
+	// 4.6 使用批量查詢結果填充每個區域的溫度感測器數據
+	for areaID, sensorIDs := range areaSensorIDs {
+		if areaInfo, exists := areaMap[areaID]; exists {
 			for sensorID := range sensorIDs {
-				sensorData, err := s.getTemperatureSensorInfo(sensorID)
-				if err == nil {
+				if sensorData, ok := sensorDataMap[sensorID]; ok {
 					areaInfo.Sensors = append(areaInfo.Sensors, *sensorData)
+				} else {
+					// 如果批量查詢沒有找到，添加空數據
+					areaInfo.Sensors = append(areaInfo.Sensors, dto.TemperatureSensorInfo{
+						SensorID: sensorID,
+					})
 				}
 			}
 		}
@@ -201,6 +359,7 @@ func (s *DashboardAreaService) calculateAreaStatistics(areaInfo *dto.AreaInfo) d
 		TotalMeters:     len(areaInfo.Meters),
 		TotalSensors:    len(areaInfo.Sensors),
 		TotalACPackages: len(areaInfo.ACPackages),
+		TotalVRFs:       len(areaInfo.VRFs),
 	}
 
 	// 計算電表統計
@@ -251,7 +410,7 @@ func (s *DashboardAreaService) calculateAreaStatistics(areaInfo *dto.AreaInfo) d
 		}
 	}
 
-	// 計算運行中的冷氣數量
+	// 計算 Package AC 運行中的壓縮機數量
 	for _, acPackage := range areaInfo.ACPackages {
 		for _, compressor := range acPackage.Compressors {
 			if compressor.IsRunning {
@@ -260,20 +419,31 @@ func (s *DashboardAreaService) calculateAreaStatistics(areaInfo *dto.AreaInfo) d
 		}
 	}
 
+	// 計算 VRF 統計
+	for _, vrf := range areaInfo.VRFs {
+		stats.TotalVRFUnits += len(vrf.ACUnits)
+		for _, unit := range vrf.ACUnits {
+			if unit.IsRunning {
+				stats.RunningVRFUnitCount++
+			}
+		}
+	}
+
 	return stats
 }
 
-// calculateHeatIndexForArea - 計算體感溫度（區域服務專用）
-// 使用簡化的熱指數公式（直接使用攝氏度）
-func calculateHeatIndexForArea(temperature, humidity float64) float64 {
-	if temperature < 27 {
-		return temperature
+func calculateHeatIndexForArea(T, RH float64) float64 {
+	// 若濕度是小數型（例如 0.58），轉成百分比
+	if RH <= 1 {
+		RH *= 100
 	}
 
-	T := temperature
-	RH := humidity
+	// 溫度低於 27 時使用簡化公式（讓體感略降，提早關壓縮機）
+	if T < 27 {
+		return T - 0.3*(RH/100)*(T-20)
+	}
 
-	// 使用攝氏度的簡化體感溫度公式
+	// 高溫使用 Steadman 熱指數公式
 	HI := -8.78469476 +
 		1.61139411*T +
 		2.338548838*RH -

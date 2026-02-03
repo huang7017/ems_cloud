@@ -85,9 +85,9 @@ function* createPageSaga(action: ReturnType<typeof actions.createPage>) {
       menuData
     );
 
-    if (response.success && response.data.length > 0) {
-      const newPage = menuItemToPage(response.data[0]);
-      yield put(actions.createPageSuccess(newPage));
+    if (response.success) {
+      // Re-fetch the entire list to ensure tree structure is correct
+      yield put(actions.fetchPages());
       yield put(actions.setDialogOpen(false));
     } else {
       yield put(actions.createPageFailure("Failed to create page"));
@@ -111,9 +111,9 @@ function* updatePageSaga(action: ReturnType<typeof actions.updatePage>) {
       updateData
     );
 
-    if (response.success && response.data.length > 0) {
-      const updatedPage = menuItemToPage(response.data[0]);
-      yield put(actions.updatePageSuccess(updatedPage));
+    if (response.success) {
+      // Re-fetch the entire list to ensure tree structure is correct
+      yield put(actions.fetchPages());
       yield put(actions.setDialogOpen(false));
     } else {
       yield put(actions.updatePageFailure("Failed to update page"));
@@ -137,7 +137,8 @@ function* deletePageSaga(action: ReturnType<typeof actions.deletePage>) {
     );
 
     if (response.success) {
-      yield put(actions.deletePageSuccess(pageId));
+      // Re-fetch the entire list to ensure tree structure is correct
+      yield put(actions.fetchPages());
       yield put(actions.setDeleteDialogOpen(false));
     } else {
       yield put(actions.deletePageFailure("Failed to delete page"));

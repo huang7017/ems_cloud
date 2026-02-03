@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -16,6 +17,16 @@ import {
   Button,
   Tabs,
   Tab,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Collapse,
+  Alert,
+  AlertTitle,
+  Badge,
 } from "@mui/material";
 import { LineChart } from '@mui/x-charts/LineChart';
 import {
@@ -33,6 +44,16 @@ import {
   Lightbulb as LightbulbIcon,
   Build as BuildIcon,
   AcUnit as AcUnitIcon,
+  OpenInNew as OpenInNewIcon,
+  ArrowForward as ArrowForwardIcon,
+  Settings as SettingsIcon,
+  Business as BusinessIcon,
+  Info as InfoIcon,
+  Close as CloseIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useSelector, useDispatch } from "react-redux";
@@ -55,8 +76,13 @@ import {
   selectedCompanyTemperaturesHistorySelector,
   metersLoadingSelector,
   temperaturesLoadingSelector,
+  temperatureRangeSelector,
+  anomalyAlertsSelector,
+  alertCountsSelector,
+  type AnomalyAlert,
 } from "./selector";
-import { formatTimestamp, formatShortTimestamp, formatMonthDay } from "../../helper/utils";
+import { formatTimestamp, formatShortTimestamp, formatDateKey } from "../../helper/utils";
+import { useWebSocket, type ACStatusUpdate, type VRFStatusUpdate } from "../../hooks/useWebSocket";
 
 // Styled components
 const StatCard = styled(Paper)(({ theme }) => ({
@@ -96,6 +122,14 @@ const HomePage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Device detail dialog state
+  const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<any>(null);
+
+  // Alerts section expanded state
+  const [alertsExpanded, setAlertsExpanded] = useState(true);
 
   // Dashboard data
   const companies = useSelector(companiesListSelector);
@@ -120,16 +154,52 @@ const HomePage: React.FC = () => {
   const runningAC = useSelector(totalRunningACSelector);
   const totalAC = useSelector(totalACPackagesSelector);
 
+  // Temperature range and anomaly alerts
+  const temperatureRange = useSelector(temperatureRangeSelector);
+  const anomalyAlerts = useSelector(anomalyAlertsSelector);
+  const alertCounts = useSelector(alertCountsSelector);
+
+  // Helper function to get local date string in YYYY-MM-DD format
+  // This ensures we use the local timezone date, not UTC date
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Date range state for trend charts
   const [startDate, setStartDate] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() - 7); // Default: last 7 days
-    return date.toISOString().split('T')[0];
+    return getLocalDateString(date);
   });
   const [endDate, setEndDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
+    return getLocalDateString(new Date());
   });
   const [trendTab, setTrendTab] = useState(0); // 0: 能源, 1: 温度
+
+  // Convert local date to UTC with full day range
+  // dateString: "YYYY-MM-DD" format
+  // Returns UTC ISO string for the selected date at 00:00:00 (converted to UTC)
+  const convertLocalDateToUTCStart = (dateString: string): string => {
+    // Create date object at midnight in local timezone
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    // Convert to UTC ISO string
+    return localDate.toISOString();
+  };
+
+  // Convert local date to UTC with full day range
+  // dateString: "YYYY-MM-DD" format
+  // Returns UTC ISO string for the selected date at 23:59:59 (converted to UTC)
+  const convertLocalDateToUTCEnd = (dateString: string): string => {
+    // Create date object at 23:59:59 in local timezone
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+    // Convert to UTC ISO string
+    return localDate.toISOString();
+  };
 
   // Fetch companies list on mount
   useEffect(() => {
@@ -144,8 +214,13 @@ const HomePage: React.FC = () => {
       const start = new Date();
       start.setDate(start.getDate() - 7);
       
-      const startTime = start.toISOString();
-      const endTime = end.toISOString();
+      // Get date strings in YYYY-MM-DD format using local timezone
+      const startDateStr = getLocalDateString(start);
+      const endDateStr = getLocalDateString(end);
+      
+      // Convert local dates to UTC with full day range
+      const startTime = convertLocalDateToUTCStart(startDateStr);
+      const endTime = convertLocalDateToUTCEnd(endDateStr);
       
       // Auto-fetch energy trend data
       dispatch(actions.fetchMeters({
@@ -171,6 +246,23 @@ const HomePage: React.FC = () => {
     }
   }, [selectedCompanyId, dispatch]);
 
+  // WebSocket real-time updates
+  const handleACStatusUpdate = useCallback((data: ACStatusUpdate) => {
+    dispatch(actions.updateACStatus(data));
+  }, [dispatch]);
+
+  const handleVRFStatusUpdate = useCallback((data: VRFStatusUpdate) => {
+    dispatch(actions.updateVRFStatus(data));
+  }, [dispatch]);
+
+  // WebSocket connection for real-time updates
+  useWebSocket({
+    companyId: selectedCompanyId ?? undefined,
+    onACStatus: handleACStatusUpdate,
+    onVRFStatus: handleVRFStatusUpdate,
+    enabled: !!selectedCompanyId,
+  });
+
   // Handle company selection change
   const handleCompanyChange = (companyId: number) => {
     dispatch(actions.setSelectedCompanyId(companyId));
@@ -185,8 +277,9 @@ const HomePage: React.FC = () => {
   const handleQueryTrends = () => {
     if (!selectedCompanyId) return;
     
-    const startTime = new Date(startDate).toISOString();
-    const endTime = new Date(endDate + 'T23:59:59').toISOString();
+    // Convert local dates to UTC with full day range
+    const startTime = convertLocalDateToUTCStart(startDate);
+    const endTime = convertLocalDateToUTCEnd(endDate);
     
     if (trendTab === 0) {
       // Query energy trends
@@ -210,27 +303,59 @@ const HomePage: React.FC = () => {
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - days);
-    setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(end.toISOString().split('T')[0]);
+    setStartDate(getLocalDateString(start));
+    setEndDate(getLocalDateString(end));
   };
+
+  // Navigation handlers
+  const handleNavigateToEnergy = useCallback(() => {
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('company_id', selectedCompanyId.toString());
+    params.set('start', startDate);
+    params.set('end', endDate);
+    navigate(`/analyze/energy?${params.toString()}`);
+  }, [navigate, selectedCompanyId, startDate, endDate]);
+
+  const handleNavigateToTemperature = useCallback(() => {
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('company_id', selectedCompanyId.toString());
+    params.set('start', startDate);
+    params.set('end', endDate);
+    navigate(`/analyze/temperature?${params.toString()}`);
+  }, [navigate, selectedCompanyId, startDate, endDate]);
+
+  const handleNavigateToCompanyManagement = useCallback(() => {
+    navigate('/setting/company');
+  }, [navigate]);
+
+  const handleNavigateToDeviceManagement = useCallback(() => {
+    navigate('/setting/device');
+  }, [navigate]);
+
+  // Device click handler
+  const handleDeviceClick = useCallback((device: any, sensor: any) => {
+    setSelectedDevice({ ...device, sensor });
+    setDeviceDialogOpen(true);
+  }, []);
 
   // Aggregate energy data by day
   const aggregateEnergyByDay = () => {
-    const dailyData: Record<string, { 
-      totalKw: number; 
+    const dailyData: Record<string, {
+      totalKw: number;
       maxKWh: number; // 当天最大读数
       minKWh: number; // 当天最小读数
       lastKWh: number; // 当天最后一笔读数（总度数）
       count: number;
       lastTimestamp: string;
     }> = {};
-    
+
     metersHistory.forEach((data) => {
-      const date = formatMonthDay(data.timestamp);
-      
-      if (!dailyData[date]) {
-        dailyData[date] = { 
-          totalKw: 0, 
+      // 使用 YYYY-MM-DD 格式作为键，确保跨年份时排序正确
+      const dateKey = formatDateKey(data.timestamp);
+
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = {
+          totalKw: 0,
           maxKWh: data.k_wh,
           minKWh: data.k_wh,
           lastKWh: data.k_wh,
@@ -238,46 +363,46 @@ const HomePage: React.FC = () => {
           lastTimestamp: data.timestamp
         };
       }
-      
-      dailyData[date].totalKw += data.kw;
-      dailyData[date].maxKWh = Math.max(dailyData[date].maxKWh, data.k_wh);
-      dailyData[date].minKWh = Math.min(dailyData[date].minKWh, data.k_wh);
-      dailyData[date].count += 1;
-      
+
+      dailyData[dateKey].totalKw += data.kw;
+      dailyData[dateKey].maxKWh = Math.max(dailyData[dateKey].maxKWh, data.k_wh);
+      dailyData[dateKey].minKWh = Math.min(dailyData[dateKey].minKWh, data.k_wh);
+      dailyData[dateKey].count += 1;
+
       // 保留最新的读数作为当天的总度数
-      if (new Date(data.timestamp) > new Date(dailyData[date].lastTimestamp)) {
-        dailyData[date].lastKWh = data.k_wh;
-        dailyData[date].lastTimestamp = data.timestamp;
+      if (new Date(data.timestamp) > new Date(dailyData[dateKey].lastTimestamp)) {
+        dailyData[dateKey].lastKWh = data.k_wh;
+        dailyData[dateKey].lastTimestamp = data.timestamp;
       }
     });
-    
-    // Sort by date (MM/DD format)
-    const sortedDates = Object.keys(dailyData).sort((a, b) => {
-      // a 和 b 格式为 "MM/DD"
-      const [monthA, dayA] = a.split('/').map(Number);
-      const [monthB, dayB] = b.split('/').map(Number);
-      // 先比较月份，再比较日期
-      if (monthA !== monthB) return monthA - monthB;
-      return dayA - dayB;
-    });
-    
+
+    // Sort by date (YYYY-MM-DD format, string sort works correctly)
+    const sortedDateKeys = Object.keys(dailyData).sort();
+
     // Calculate daily consumption
-    const dailyConsumption = sortedDates.map((date, index) => {
+    const dailyConsumption = sortedDateKeys.map((dateKey, index) => {
       if (index === 0) {
         // 第一天：用当天最大 - 最小
-        const dayData = dailyData[date];
+        const dayData = dailyData[dateKey];
         return (dayData.maxKWh - dayData.minKWh).toFixed(1);
       }
       // 其他天：今天最后读数 - 昨天最后读数
-      const previousDate = sortedDates[index - 1];
-      const todayKWh = dailyData[date].lastKWh;
-      const yesterdayKWh = dailyData[previousDate].lastKWh;
+      const previousDateKey = sortedDateKeys[index - 1];
+      const todayKWh = dailyData[dateKey].lastKWh;
+      const yesterdayKWh = dailyData[previousDateKey].lastKWh;
       return (todayKWh - yesterdayKWh).toFixed(1);
     });
-    
+
+    // 转换为显示格式 MM/DD
+    const displayDates = sortedDateKeys.map(dateKey => {
+      // dateKey 格式: YYYY-MM-DD，转换为 MM/DD 显示
+      const [, month, day] = dateKey.split('-');
+      return `${month}/${day}`;
+    });
+
     return {
-      dates: sortedDates,
-      avgKw: sortedDates.map(date => (dailyData[date].totalKw / dailyData[date].count).toFixed(1)),
+      dates: displayDates,
+      avgKw: sortedDateKeys.map(dateKey => (dailyData[dateKey].totalKw / dailyData[dateKey].count).toFixed(1)),
       dailyKWh: dailyConsumption, // 每日用电量
     };
   };
@@ -384,41 +509,42 @@ const HomePage: React.FC = () => {
 
   // Aggregate temperature data by day
   const aggregateTemperatureByDay = () => {
-    const dailyData: Record<string, { 
-      totalTemp: number; 
-      totalHumidity: number; 
-      totalHeatIndex: number; 
+    const dailyData: Record<string, {
+      totalTemp: number;
+      totalHumidity: number;
+      totalHeatIndex: number;
       count: number;
     }> = {};
-    
+
     temperaturesHistory.forEach((data) => {
-      const date = formatMonthDay(data.timestamp);
-      
-      if (!dailyData[date]) {
-        dailyData[date] = { totalTemp: 0, totalHumidity: 0, totalHeatIndex: 0, count: 0 };
+      // 使用 YYYY-MM-DD 格式作为键，确保跨年份时排序正确
+      const dateKey = formatDateKey(data.timestamp);
+
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = { totalTemp: 0, totalHumidity: 0, totalHeatIndex: 0, count: 0 };
       }
-      
-      dailyData[date].totalTemp += data.temperature;
-      dailyData[date].totalHumidity += data.humidity;
-      dailyData[date].totalHeatIndex += data.heat_index;
-      dailyData[date].count += 1;
+
+      dailyData[dateKey].totalTemp += data.temperature;
+      dailyData[dateKey].totalHumidity += data.humidity;
+      dailyData[dateKey].totalHeatIndex += data.heat_index;
+      dailyData[dateKey].count += 1;
     });
-    
-    // Sort by date and prepare chart data (MM/DD format)
-    const sortedDates = Object.keys(dailyData).sort((a, b) => {
-      // a 和 b 格式为 "MM/DD"
-      const [monthA, dayA] = a.split('/').map(Number);
-      const [monthB, dayB] = b.split('/').map(Number);
-      // 先比较月份，再比较日期
-      if (monthA !== monthB) return monthA - monthB;
-      return dayA - dayB;
+
+    // Sort by date (YYYY-MM-DD format, string sort works correctly)
+    const sortedDateKeys = Object.keys(dailyData).sort();
+
+    // 转换为显示格式 MM/DD
+    const displayDates = sortedDateKeys.map(dateKey => {
+      // dateKey 格式: YYYY-MM-DD，转换为 MM/DD 显示
+      const [, month, day] = dateKey.split('-');
+      return `${month}/${day}`;
     });
-    
+
     return {
-      dates: sortedDates,
-      avgTemp: sortedDates.map(date => (dailyData[date].totalTemp / dailyData[date].count).toFixed(1)),
-      avgHumidity: sortedDates.map(date => (dailyData[date].totalHumidity / dailyData[date].count).toFixed(1)),
-      avgHeatIndex: sortedDates.map(date => (dailyData[date].totalHeatIndex / dailyData[date].count).toFixed(1)),
+      dates: displayDates,
+      avgTemp: sortedDateKeys.map(dateKey => (dailyData[dateKey].totalTemp / dailyData[dateKey].count).toFixed(1)),
+      avgHumidity: sortedDateKeys.map(dateKey => (dailyData[dateKey].totalHumidity / dailyData[dateKey].count).toFixed(1)),
+      avgHeatIndex: sortedDateKeys.map(dateKey => (dailyData[dateKey].totalHeatIndex / dailyData[dateKey].count).toFixed(1)),
     };
   };
 
@@ -559,18 +685,115 @@ const HomePage: React.FC = () => {
                 flexWrap: "wrap",
               }}
             >
-              <Chip
-                icon={<span>🌱</span>}
-                label="ESG 績效良好"
-                sx={{
-                  backgroundColor: "rgba(16, 185, 129, 0.1)",
-                  color: "#10b981",
-                  fontWeight: 500,
-                }}
-              />
+              {alertCounts.total > 0 && (
+                <Chip
+                  icon={alertCounts.critical > 0 ? <ErrorIcon sx={{ fontSize: 16 }} /> : <WarningIcon sx={{ fontSize: 16 }} />}
+                  label={`${alertCounts.total} 個警報`}
+                  sx={{
+                    backgroundColor: alertCounts.critical > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                    color: alertCounts.critical > 0 ? "#ef4444" : "#f59e0b",
+                    fontWeight: 500,
+                  }}
+                />
+              )}
+              {alertCounts.total === 0 && (
+                <Chip
+                  icon={<span>🌱</span>}
+                  label="系統運行正常"
+                  sx={{
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    color: "#10b981",
+                    fontWeight: 500,
+                  }}
+                />
+              )}
             </Box>
           </Box>
         </Box>
+
+        {/* Anomaly Alerts Section */}
+        {anomalyAlerts.length > 0 && (
+          <Paper
+            elevation={1}
+            sx={{
+              mb: 3,
+              overflow: "hidden",
+              border: alertCounts.critical > 0 ? "1px solid #fecaca" : "1px solid #fed7aa",
+              backgroundColor: alertCounts.critical > 0 ? "#fef2f2" : "#fffbeb",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                p: 2,
+                cursor: "pointer",
+                "&:hover": { backgroundColor: "rgba(0,0,0,0.02)" },
+              }}
+              onClick={() => setAlertsExpanded(!alertsExpanded)}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {alertCounts.critical > 0 ? (
+                  <ErrorIcon sx={{ color: "#ef4444", fontSize: 24 }} />
+                ) : (
+                  <WarningIcon sx={{ color: "#f59e0b", fontSize: 24 }} />
+                )}
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: alertCounts.critical > 0 ? "#991b1b" : "#92400e" }}>
+                    異常警報
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: alertCounts.critical > 0 ? "#dc2626" : "#d97706" }}>
+                    {alertCounts.critical > 0 && `${alertCounts.critical} 個嚴重警報`}
+                    {alertCounts.critical > 0 && alertCounts.warning > 0 && "、"}
+                    {alertCounts.warning > 0 && `${alertCounts.warning} 個警告`}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Badge badgeContent={alertCounts.total} color={alertCounts.critical > 0 ? "error" : "warning"}>
+                  <Box />
+                </Badge>
+                <IconButton size="small">
+                  {alertsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </IconButton>
+              </Box>
+            </Box>
+            <Collapse in={alertsExpanded}>
+              <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                {anomalyAlerts.slice(0, 5).map((alert: AnomalyAlert) => (
+                  <Alert
+                    key={alert.id}
+                    severity={alert.severity === "critical" ? "error" : "warning"}
+                    sx={{
+                      "& .MuiAlert-message": { width: "100%" },
+                    }}
+                  >
+                    <AlertTitle sx={{ fontWeight: 600, mb: 0.5 }}>
+                      {alert.title}
+                    </AlertTitle>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                      <Typography variant="body2">
+                        {alert.description}
+                      </Typography>
+                      <Chip
+                        label={alert.location}
+                        size="small"
+                        variant="outlined"
+                        sx={{ height: 24 }}
+                      />
+                    </Box>
+                  </Alert>
+                ))}
+                {anomalyAlerts.length > 5 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 1 }}>
+                    還有 {anomalyAlerts.length - 5} 個警報...
+                  </Typography>
+                )}
+              </Box>
+            </Collapse>
+          </Paper>
+        )}
 
         {/* Data Overview Grid */}
         <Box
@@ -584,7 +807,11 @@ const HomePage: React.FC = () => {
         >
           {/* 今日用电量 */}
           <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
-            <StatCard elevation={1}>
+            <StatCard
+              elevation={1}
+              onClick={handleNavigateToEnergy}
+              sx={{ cursor: "pointer", "&:hover": { boxShadow: 4, transform: "translateY(-2px)" }, transition: "all 0.2s" }}
+            >
               <Box>
                 <Box
                   sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
@@ -604,13 +831,16 @@ const HomePage: React.FC = () => {
                 >
                   總用電量
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <FiberManualRecordIcon
-                    sx={{ color: "text.secondary", fontSize: 16 }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    即時數據
-                  </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <FiberManualRecordIcon
+                      sx={{ color: "text.secondary", fontSize: 16 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      即時數據
+                    </Typography>
+                  </Box>
+                  <ArrowForwardIcon sx={{ fontSize: 16, color: "primary.main" }} />
                 </Box>
               </Box>
             </StatCard>
@@ -650,9 +880,13 @@ const HomePage: React.FC = () => {
             </StatCard>
           </Box>
 
-          {/* 平均室内温度 */}
+          {/* 平均室內溫度 */}
           <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
-            <StatCard elevation={1}>
+            <StatCard
+              elevation={1}
+              onClick={handleNavigateToTemperature}
+              sx={{ cursor: "pointer", "&:hover": { boxShadow: 4, transform: "translateY(-2px)" }, transition: "all 0.2s" }}
+            >
               <Box>
                 <Box
                   sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
@@ -660,9 +894,7 @@ const HomePage: React.FC = () => {
                   <ThermostatIcon sx={{ color: "#0ea5e9", fontSize: 24 }} />
                   <Typography variant="h3" sx={{ fontWeight: 700 }}>
                     {avgTemperature ? avgTemperature.toFixed(1) : "--"}{" "}
-                    <Typography component="span" variant="h6">
-                      °C
-                    </Typography>
+                    <Typography component="span" variant="h6">°C</Typography>
                   </Typography>
                 </Box>
                 <Typography
@@ -671,14 +903,42 @@ const HomePage: React.FC = () => {
                   sx={{ mb: 1 }}
                 >
                   平均室內溫度
+                  {temperatureRange.min !== null && temperatureRange.max !== null && (
+                    <Typography component="span" sx={{ ml: 1, color: "#64748b" }}>
+                      ({temperatureRange.min.toFixed(1)}~{temperatureRange.max.toFixed(1)}°C)
+                    </Typography>
+                  )}
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <FiberManualRecordIcon
-                    sx={{ color: "text.secondary", fontSize: 16 }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    維持最佳舒適度
-                  </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    {temperatureRange.min !== null && temperatureRange.max !== null ? (
+                      <>
+                        {(temperatureRange.min < 18 || temperatureRange.max > 30) ? (
+                          <>
+                            <WarningIcon sx={{ color: "#f59e0b", fontSize: 16 }} />
+                            <Typography variant="body2" sx={{ color: "#f59e0b" }}>
+                              溫度異常
+                            </Typography>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircleIcon sx={{ color: "success.main", fontSize: 16 }} />
+                            <Typography variant="body2" sx={{ color: "success.main" }}>
+                              溫度正常
+                            </Typography>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <FiberManualRecordIcon sx={{ color: "text.secondary", fontSize: 16 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          無數據
+                        </Typography>
+                      </>
+                    )}
+                  </Box>
+                  <ArrowForwardIcon sx={{ fontSize: 16, color: "primary.main" }} />
                 </Box>
               </Box>
             </StatCard>
@@ -686,7 +946,11 @@ const HomePage: React.FC = () => {
 
           {/* 设备运行状态 */}
           <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
-            <StatCard elevation={1}>
+            <StatCard
+              elevation={1}
+              onClick={handleNavigateToCompanyManagement}
+              sx={{ cursor: "pointer", "&:hover": { boxShadow: 4, transform: "translateY(-2px)" }, transition: "all 0.2s" }}
+            >
               <Box>
                 <Box
                   sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
@@ -703,16 +967,19 @@ const HomePage: React.FC = () => {
                 >
                   設備運行狀態
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <CheckCircleIcon
-                    sx={{ color: "success.main", fontSize: 16 }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "success.main", fontWeight: 500 }}
-                  >
-                    系統運行中
-                  </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <CheckCircleIcon
+                      sx={{ color: "success.main", fontSize: 16 }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "success.main", fontWeight: 500 }}
+                    >
+                      系統運行中
+                    </Typography>
+                  </Box>
+                  <ArrowForwardIcon sx={{ fontSize: 16, color: "primary.main" }} />
                 </Box>
               </Box>
             </StatCard>
@@ -738,6 +1005,16 @@ const HomePage: React.FC = () => {
                     趨勢分析
                   </Typography>
                 </Box>
+                <Tooltip title={trendTab === 0 ? "查看能源詳細分析" : "查看溫度詳細分析"}>
+                  <Button
+                    size="small"
+                    endIcon={<OpenInNewIcon />}
+                    onClick={trendTab === 0 ? handleNavigateToEnergy : handleNavigateToTemperature}
+                    disabled={!selectedCompanyId}
+                  >
+                    查看詳情
+                  </Button>
+                </Tooltip>
               </Box>
 
               {/* Tabs for Energy vs Temperature */}
@@ -830,9 +1107,14 @@ const HomePage: React.FC = () => {
                     平均溫度
                   </Typography>
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                   {avgTemperature ? avgTemperature.toFixed(1) : "--"} °C
                 </Typography>
+                {temperatureRange.min !== null && temperatureRange.max !== null && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                    範圍: {temperatureRange.min.toFixed(1)} ~ {temperatureRange.max.toFixed(1)} °C
+                  </Typography>
+                )}
                 <LinearProgress
                   variant="determinate"
                   value={avgTemperature ? Math.min((avgTemperature / 40) * 100, 100) : 0}
@@ -1158,7 +1440,20 @@ const HomePage: React.FC = () => {
                 設備狀態
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              {/* Quick Navigation */}
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Tooltip title="公司管理">
+                  <IconButton size="small" onClick={handleNavigateToCompanyManagement} color="primary">
+                    <BusinessIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="設備管理">
+                  <IconButton size="small" onClick={handleNavigateToDeviceManagement} color="primary">
+                    <SettingsIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             <FormControl size="small" sx={{ minWidth: 150 }}>
                 <Select
                   value={selectedCompanyId || ""}
@@ -1231,11 +1526,19 @@ const HomePage: React.FC = () => {
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: "center" }}>
-                        <Typography variant="caption" color="text.secondary">設備</Typography>
+                        <Typography variant="caption" color="text.secondary">Package</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>
                           {area.statistics.running_ac_count}/{area.statistics.total_ac_packages}
                         </Typography>
                       </Box>
+                      {(area.statistics.total_vrfs || 0) > 0 && (
+                        <Box sx={{ textAlign: "center" }}>
+                          <Typography variant="caption" color="text.secondary">VRF</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "primary.main" }}>
+                            {area.statistics.running_vrf_unit_count || 0}/{area.statistics.total_vrf_units || 0}
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
                 </Paper>
@@ -1271,17 +1574,32 @@ const HomePage: React.FC = () => {
                     </Box>
                   ))}
 
-                  {/* 冷气设备卡片（包含温度感测器数据） */}
-                  {area.ac_packages.map((acPackage, index) => {
+                  {/* Package AC 冷氣卡片（包含溫度感測器數據） */}
+                  {area.ac_packages?.map((acPackage, index) => {
                     const sensor = area.sensors[index];
+                    const hasRunning = acPackage.compressors?.some(c => c.is_running);
                     return (
                       <Box key={acPackage.package_id} sx={{ flex: "1 1 320px", minWidth: 0 }}>
-                        <DeviceCard elevation={1}>
+                        <DeviceCard
+                          elevation={1}
+                          onClick={() => handleDeviceClick(acPackage, sensor)}
+                          sx={{ cursor: "pointer" }}
+                        >
                           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                               ❄️ {acPackage.package_name}
                             </Typography>
-                            <Chip label="運行中" size="small" color="success" sx={{ height: 20 }} />
+                            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+                              <Chip
+                                label={hasRunning ? "運行中" : "待機"}
+                                size="small"
+                                color={hasRunning ? "success" : "default"}
+                                sx={{ height: 20 }}
+                              />
+                              <Tooltip title="查看詳情">
+                                <InfoIcon fontSize="small" sx={{ color: "text.secondary", opacity: 0.6 }} />
+                              </Tooltip>
+                            </Box>
                           </Box>
                           {sensor && sensor.latest_data ? (
                             <>
@@ -1293,11 +1611,11 @@ const HomePage: React.FC = () => {
                                   目前溫度
                                 </Typography>
                               </Box>
-                              
-                              <Box sx={{ 
-                                backgroundColor: "#f8fafc", 
-                                borderRadius: 1, 
-                                p: 1.5, 
+
+                              <Box sx={{
+                                backgroundColor: "#f8fafc",
+                                borderRadius: 1,
+                                p: 1.5,
                                 mb: 1,
                                 border: "1px solid #e2e8f0"
                               }}>
@@ -1336,7 +1654,7 @@ const HomePage: React.FC = () => {
                                   ID: {sensor.sensor_id.slice(0, 8)}...
                                 </Typography>
                               </Box>
-                              
+
                               <Typography variant="caption" color="text.secondary">
                                 更新時間: {formatShortTimestamp(sensor.latest_data.timestamp)}
                               </Typography>
@@ -1344,6 +1662,87 @@ const HomePage: React.FC = () => {
                           ) : (
                             <Typography variant="body2" color="text.secondary">無溫度數據</Typography>
                           )}
+                        </DeviceCard>
+                      </Box>
+                    );
+                  })}
+
+                  {/* VRF 系統卡片 */}
+                  {area.vrfs?.map((vrf) => {
+                    const runningUnits = vrf.ac_units?.filter(u => u.is_running).length || 0;
+                    const totalUnits = vrf.ac_units?.length || 0;
+                    return (
+                      <Box key={vrf.vrf_id} sx={{ flex: "1 1 320px", minWidth: 0 }}>
+                        <DeviceCard
+                          elevation={1}
+                          sx={{
+                            borderLeft: "4px solid #3b82f6",
+                            backgroundColor: "#fafbff"
+                          }}
+                        >
+                          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#3b82f6" }}>
+                              🏢 VRF 系統
+                            </Typography>
+                            <Chip
+                              label={`${runningUnits}/${totalUnits} 運行`}
+                              size="small"
+                              color={runningUnits > 0 ? "primary" : "default"}
+                              sx={{ height: 20 }}
+                            />
+                          </Box>
+
+                          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                            地址: {vrf.address}
+                          </Typography>
+
+                          {/* AC Units 列表 */}
+                          <Box sx={{
+                            backgroundColor: "#f0f4ff",
+                            borderRadius: 1,
+                            p: 1.5,
+                            border: "1px solid #dbeafe",
+                            maxHeight: 200,
+                            overflow: "auto"
+                          }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#1e40af", mb: 1, display: "block" }}>
+                              室內機 ({totalUnits} 台)
+                            </Typography>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                              {vrf.ac_units?.map((unit) => (
+                                <Box
+                                  key={unit.unit_id}
+                                  sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    p: 0.75,
+                                    backgroundColor: unit.is_running ? "#dcfce7" : "#fff",
+                                    borderRadius: 0.5,
+                                    border: "1px solid",
+                                    borderColor: unit.is_running ? "#86efac" : "#e5e7eb"
+                                  }}
+                                >
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Box
+                                      sx={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: "50%",
+                                        backgroundColor: unit.is_running ? "#22c55e" : "#9ca3af"
+                                      }}
+                                    />
+                                    <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                                      {unit.name || `Unit #${unit.number}`}
+                                    </Typography>
+                                  </Box>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {unit.location || "-"}
+                                  </Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          </Box>
                         </DeviceCard>
                       </Box>
                     );
@@ -1362,6 +1761,109 @@ const HomePage: React.FC = () => {
             </Box>
           )}
         </Paper>
+
+        {/* Device Detail Dialog */}
+        <Dialog
+          open={deviceDialogOpen}
+          onClose={() => setDeviceDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <AcUnitIcon color="primary" />
+              {selectedDevice?.package_name || "設備詳情"}
+            </Box>
+            <IconButton size="small" onClick={() => setDeviceDialogOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            {selectedDevice && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Device Info */}
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    設備資訊
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">設備名稱</Typography>
+                      <Typography variant="body2" fontWeight={600}>{selectedDevice.package_name}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">設備 ID</Typography>
+                      <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                        {selectedDevice.package_id?.slice(0, 12)}...
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+
+                {/* Sensor Data */}
+                {selectedDevice.sensor?.latest_data && (
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      感測器數據
+                    </Typography>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2 }}>
+                      <Box sx={{ textAlign: "center", p: 1, backgroundColor: "#fff7ed", borderRadius: 1 }}>
+                        <Typography variant="caption" color="text.secondary">溫度</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#f59e0b" }}>
+                          {selectedDevice.sensor.latest_data.temperature.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: "center", p: 1, backgroundColor: "#eff6ff", borderRadius: 1 }}>
+                        <Typography variant="caption" color="text.secondary">濕度</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#0ea5e9" }}>
+                          {selectedDevice.sensor.latest_data.humidity.toFixed(0)}%
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: "center", p: 1, backgroundColor: "#f5f3ff", borderRadius: 1 }}>
+                        <Typography variant="caption" color="text.secondary">體感溫度</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#8b5cf6" }}>
+                          {selectedDevice.sensor.latest_data.heat_index.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                      更新時間: {formatTimestamp(selectedDevice.sensor.latest_data.timestamp)}
+                    </Typography>
+                  </Paper>
+                )}
+
+                {/* Quick Actions */}
+                <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<ShowChartIcon />}
+                    onClick={() => {
+                      setDeviceDialogOpen(false);
+                      handleNavigateToTemperature();
+                    }}
+                  >
+                    查看溫度趨勢
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<SettingsIcon />}
+                    onClick={() => {
+                      setDeviceDialogOpen(false);
+                      handleNavigateToCompanyManagement();
+                    }}
+                  >
+                    設備管理
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeviceDialogOpen(false)}>關閉</Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

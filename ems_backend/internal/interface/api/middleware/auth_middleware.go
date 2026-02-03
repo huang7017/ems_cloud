@@ -115,7 +115,117 @@ func AuthMiddleware(authService *services.AuthService, memberRoleDomainService *
 
 		fmt.Println("======================")
 
+		// 提取所有角色ID作為數組
+		roleIDs := make([]uint, len(memberRoles))
+		for i, role := range memberRoles {
+			roleIDs[i] = role.RoleID
+		}
+
 		c.Set("member_roles", memberRoles)
+		c.Set("role_ids", roleIDs) // 存儲所有角色ID數組，用於多角色權限檢查
+		c.Next()
+	}
+}
+
+// SSEAuthMiddleware - SSE/WebSocket 專用驗證中間件
+// 因為 EventSource 和 WebSocket 不支援自定義 header，所以從 query param 取得 token
+func SSEAuthMiddleware(authService *services.AuthService, memberRoleDomainService *memberRoleDomainService.MemberRoleService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Printf("[SSEAuth] Request: %s %s from %s\n", c.Request.Method, c.Request.URL.Path, c.ClientIP())
+
+		// Get token from query param
+		token := c.Query("token")
+		if token == "" {
+			// Fallback to Authorization header
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" {
+				parts := strings.Split(authHeader, " ")
+				if len(parts) == 2 && parts[0] == "Bearer" {
+					token = parts[1]
+				}
+			}
+		}
+
+		if token == "" {
+			fmt.Println("[SSEAuth] No token found")
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "token required",
+			})
+			c.Abort()
+			return
+		}
+
+		fmt.Printf("[SSEAuth] Token found, length: %d\n", len(token))
+
+		claims, err := authService.ValidateToken(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "invalid token",
+			})
+			c.Abort()
+			return
+		}
+
+		memberIDStr := claims.MemberID
+		if memberIDStr == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "invalid token claims",
+			})
+			c.Abort()
+			return
+		}
+
+		memberIDUint64, err := strconv.ParseUint(memberIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"error":   "invalid member ID format",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("member_id", uint(memberIDUint64))
+
+		memberRoles, err := memberRoleDomainService.GetByMemberID(uint(memberIDUint64))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "failed to get member roles",
+			})
+			c.Abort()
+			return
+		}
+
+		// Get role ID from query param or header
+		roleIDStr := c.Query("role_id")
+		if roleIDStr == "" {
+			roleIDStr = c.GetHeader("X-Role-ID")
+		}
+
+		if roleIDStr != "" {
+			roleID, err := strconv.ParseUint(roleIDStr, 10, 64)
+			if err == nil {
+				// Verify role belongs to member
+				for _, memberRole := range memberRoles {
+					if memberRole.RoleID == uint(roleID) {
+						c.Set("current_role_id", uint(roleID))
+						break
+					}
+				}
+			}
+		}
+
+		roleIDs := make([]uint, len(memberRoles))
+		for i, role := range memberRoles {
+			roleIDs[i] = role.RoleID
+		}
+
+		c.Set("member_roles", memberRoles)
+		c.Set("role_ids", roleIDs)
 		c.Next()
 	}
 }

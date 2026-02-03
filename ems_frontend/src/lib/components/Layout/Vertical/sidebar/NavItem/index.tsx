@@ -10,7 +10,7 @@ import ListItemText from "@mui/material/ListItemText";
 import type { Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { styled, useTheme } from "@mui/material/styles";
+import { styled, useTheme, alpha } from "@mui/material/styles";
 import { useSelector } from "react-redux";
 import type { IState } from "../../../../../../store/reducers";
 
@@ -51,35 +51,133 @@ export default function NavItem({
   const customizer = useSelector((state: IState) => state.customizer);
   const theme = useTheme();
 
-  // 直接使用 item.icon，而不是作为组件
   const itemIcon = item?.icon;
+  const isActive = pathDirect === item?.href;
+  const isNested = level && level > 1;
 
   const ListItemStyled = styled(ListItemButton)(() => ({
+    position: "relative",
     whiteSpace: "nowrap",
-    marginBottom: "2px",
-    padding: "8px 10px",
-    gap: "10px",
+    marginBottom: "4px",
+    padding: hideMenu ? "10px" : isNested ? "10px 12px 10px 24px" : "12px 16px",
+    gap: hideMenu ? "0" : "12px",
     borderRadius: `${customizer.borderRadius}px`,
-    backgroundColor:
-      pathDirect === item?.href ? theme.palette.primary.dark : "transparent",
-    color: pathDirect === item?.href ? "#ffffff" : theme.palette.text.secondary,
-    paddingLeft: hideMenu ? "10px" : level > 2 ? `${level * 15}px` : "10px",
-    "&:hover": {
-      backgroundColor:
-        pathDirect === item?.href
-          ? theme.palette.primary.dark
-          : theme.palette.action.hover,
-      color: pathDirect === item?.href ? "#ffffff" : theme.palette.primary.main,
+    backgroundColor: isActive
+      ? alpha(theme.palette.primary.main, 0.12)
+      : "transparent",
+    color: isActive
+      ? theme.palette.primary.main
+      : theme.palette.text.secondary,
+    fontWeight: isActive ? 600 : 400,
+    justifyContent: hideMenu ? "center" : "flex-start",
+
+    // Active indicator bar - hide when collapsed
+    "&::before": hideMenu ? {} : {
+      content: '""',
+      position: "absolute",
+      left: 0,
+      top: "50%",
+      transform: "translateY(-50%)",
+      width: isActive ? "4px" : "0px",
+      height: isActive ? "60%" : "0%",
+      backgroundColor: theme.palette.primary.main,
+      borderRadius: "0 4px 4px 0",
+      transition: "all 0.2s ease-in-out",
     },
+
+    "&:hover": {
+      backgroundColor: isActive
+        ? alpha(theme.palette.primary.main, 0.16)
+        : alpha(theme.palette.primary.main, 0.06),
+      color: theme.palette.primary.main,
+
+      "&::before": hideMenu ? {} : {
+        width: "4px",
+        height: "40%",
+      },
+
+      "& .MuiListItemIcon-root": {
+        color: theme.palette.primary.main,
+        transform: "scale(1.1)",
+      },
+    },
+
     "&.Mui-selected": {
-      color: "#ffffff",
-      backgroundColor: theme.palette.primary.dark,
+      backgroundColor: alpha(theme.palette.primary.main, 0.12),
+      color: theme.palette.primary.main,
+
       "&:hover": {
-        backgroundColor: theme.palette.primary.dark,
-        color: "#ffffff",
+        backgroundColor: alpha(theme.palette.primary.main, 0.16),
       },
     },
   }));
+
+  const iconStyle = {
+    minWidth: "auto",
+    width: 36,
+    height: 36,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: `${customizer.borderRadius}px`,
+    backgroundColor: isActive
+      ? alpha(theme.palette.primary.main, 0.1)
+      : "transparent",
+    color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+    transition: "all 0.2s ease-in-out",
+    "& svg": {
+      fontSize: "1.25rem",
+    },
+  };
+
+  const content = (
+    <ListItemStyled
+      disabled={item?.disabled}
+      selected={isActive}
+      onClick={lgDown ? onClick : undefined}
+    >
+      <ListItemIcon sx={iconStyle}>{itemIcon}</ListItemIcon>
+      <ListItemText
+        primary={
+          hideMenu ? null : (
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: isActive ? 600 : 500,
+                fontSize: "0.875rem",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {item?.title}
+            </Typography>
+          )
+        }
+        secondary={
+          item?.subtitle && !hideMenu ? (
+            <Typography
+              variant="caption"
+              sx={{ opacity: 0.7, fontSize: "0.75rem" }}
+            >
+              {item?.subtitle}
+            </Typography>
+          ) : null
+        }
+      />
+      {!item?.chip || hideMenu ? null : (
+        <Chip
+          color={item?.chipColor || "primary"}
+          variant={item?.variant || "filled"}
+          size="small"
+          label={item?.chip}
+          sx={{
+            height: 22,
+            fontSize: "0.7rem",
+            fontWeight: 600,
+          }}
+        />
+      )}
+    </ListItemStyled>
+  );
 
   return (
     <List component="li" disablePadding key={item?.id && item.title}>
@@ -90,75 +188,11 @@ export default function NavItem({
           rel="noopener noreferrer"
           style={{ textDecoration: "none" }}
         >
-          <ListItemStyled
-            disabled={item?.disabled}
-            selected={pathDirect === item?.href}
-            onClick={lgDown ? onClick : undefined}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: "36px",
-                p: "3px 0",
-                color: pathDirect === item?.href ? "#ffffff" : "inherit",
-              }}
-            >
-              {itemIcon}
-            </ListItemIcon>
-            <ListItemText>
-              {hideMenu ? "" : <>{item?.title}</>}
-              {item?.subtitle && !hideMenu && (
-                <>
-                  <br />
-                  <Typography variant="caption">{item?.subtitle}</Typography>
-                </>
-              )}
-            </ListItemText>
-
-            {!item?.chip || hideMenu ? null : (
-              <Chip
-                color={item?.chipColor}
-                variant={item?.variant ? item?.variant : "filled"}
-                size="small"
-                label={item?.chip}
-              />
-            )}
-          </ListItemStyled>
+          {content}
         </a>
       ) : (
         <Link to={item.href} style={{ textDecoration: "none" }}>
-          <ListItemStyled
-            disabled={item?.disabled}
-            selected={pathDirect === item?.href}
-            onClick={lgDown ? onClick : undefined}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: "36px",
-                p: "3px 0",
-                color: pathDirect === item?.href ? "#ffffff" : "inherit",
-              }}
-            >
-              {itemIcon}
-            </ListItemIcon>
-            <ListItemText>
-              {hideMenu ? "" : <>{item?.title}</>}
-              {item?.subtitle && !hideMenu && (
-                <>
-                  <br />
-                  <Typography variant="caption">{item?.subtitle}</Typography>
-                </>
-              )}
-            </ListItemText>
-
-            {!item?.chip || hideMenu ? null : (
-              <Chip
-                color={item?.chipColor}
-                variant={item?.variant ? item?.variant : "filled"}
-                size="small"
-                label={item?.chip}
-              />
-            )}
-          </ListItemStyled>
+          {content}
         </Link>
       )}
     </List>

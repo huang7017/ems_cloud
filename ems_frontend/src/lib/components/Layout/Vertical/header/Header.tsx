@@ -10,6 +10,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { actions } from "../../../../../store/Customizer/reducer";
 import { FaBars } from "react-icons/fa";
 import Profile from "./Profile";
+import RoleSwitch from "../../../RoleSwitch";
 // import Language from "./Language";
 import type { IState } from "../../../../../store/reducers";
 
@@ -67,6 +68,7 @@ const Header = () => {
           {/* Toggle Right Sidebar for mobile */}
           {/* ------------------------------------------- */}
           {/* {lgDown ? <MobileRightSidebar /> : null} */}
+          <RoleSwitch />
           <Profile />
         </Stack>
       </ToolbarStyled>

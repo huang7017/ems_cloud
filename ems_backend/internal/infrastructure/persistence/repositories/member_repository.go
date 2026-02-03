@@ -35,6 +35,24 @@ func (r *MemberRepository) FindByEmail(email string) (*entities.Member, error) {
 	return r.mapToDomain(&model)
 }
 
+func (r *MemberRepository) FindAll() ([]*entities.Member, error) {
+	var models []models.MemberModel
+	if err := r.db.Find(&models).Error; err != nil {
+		return nil, err
+	}
+
+	members := make([]*entities.Member, 0, len(models))
+	for _, model := range models {
+		member, err := r.mapToDomain(&model)
+		if err != nil {
+			return nil, err
+		}
+		members = append(members, member)
+	}
+
+	return members, nil
+}
+
 func (r *MemberRepository) Save(member *entities.Member) error {
 	model := r.mapToModel(member)
 	return r.db.Save(model).Error
@@ -76,15 +94,8 @@ func (r *MemberRepository) mapToDomain(model *models.MemberModel) (*entities.Mem
 }
 
 func (r *MemberRepository) mapToModel(member *entities.Member) *models.MemberModel {
-	// 這裡需要處理 ID 的轉換，暫時使用 0 作為新記錄
-	var id uint = 0
-	if member.ID.Value() != 0 {
-		// 實際項目中需要正確的 ID 轉換邏輯
-		id = 1 // 簡化處理
-	}
-
 	return &models.MemberModel{
-		ID:         id,
+		ID:         uint(member.ID.Value()),
 		Name:       member.Name.String(),
 		Email:      member.Email.String(),
 		IsEnable:   member.IsEnable,

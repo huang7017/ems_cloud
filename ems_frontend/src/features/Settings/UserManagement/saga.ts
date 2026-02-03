@@ -1,300 +1,232 @@
-import { call, put, takeLatest, delay } from "redux-saga/effects";
+import { call, put, takeLatest } from "redux-saga/effects";
 import { actions } from "./reducer";
 import type { User, Role } from "./types";
-import { formatTimestamp } from "../../../helper/utils";
+import {
+  fetchMembersApi,
+  updateMemberStatusApi,
+  createMemberApi,
+  updateMemberApi,
+  type MemberCreateRequest,
+  type MemberUpdateRequest
+} from "../../../api/member";
+import {
+  fetchRoles,
+  createRole as createRoleApi,
+  updateRole as updateRoleApi,
+  deleteRole as deleteRoleApi,
+} from "../../../api/role";
+import type { Member } from "../../../api/member";
 
-// Fake data for users
-const fakeUsers: User[] = [
-  {
-    id: "1",
-    name: "王大明",
-    email: "daming.wang@example.com",
-    role: "管理員",
-    status: "enabled",
-    lastLogin: "2023/05/20 13:45",
-    avatar: "WD",
-  },
-  {
-    id: "2",
-    name: "林小華",
-    email: "xiaohua.lin@example.com",
-    role: "操作員",
-    status: "enabled",
-    lastLogin: "2023/05/21 09:15",
-    avatar: "XL",
-  },
-  {
-    id: "3",
-    name: "張明輝",
-    email: "minghui.zhang@example.com",
-    role: "操作員",
-    status: "enabled",
-    lastLogin: "2023/05/19 16:30",
-    avatar: "ZM",
-  },
-  {
-    id: "4",
-    name: "李芳華",
-    email: "fanghua.li@example.com",
-    role: "操作員",
-    status: "disabled",
-    lastLogin: "2023/05/10 11:20",
-    avatar: "LF",
-  },
-];
-
-// Fake data for roles and permissions
-const fakeRoles: Role[] = [
-  {
-    id: "1",
-    name: "管理員",
-    permissions: [
-      // Dashboard permissions
-      {
-        id: "dashboard_view_all",
-        category: "儀表板",
-        name: "查看所有數據",
-        description: "View All Data",
-        checked: true,
-      },
-      {
-        id: "dashboard_export",
-        category: "儀表板",
-        name: "導出報表",
-        description: "Export Reports",
-        checked: true,
-      },
-      // Device management permissions
-      {
-        id: "device_view",
-        category: "設備管理",
-        name: "查看設備",
-        description: "View Devices",
-        checked: true,
-      },
-      {
-        id: "device_add",
-        category: "設備管理",
-        name: "新增設備",
-        description: "Add Devices",
-        checked: true,
-      },
-      {
-        id: "device_edit",
-        category: "設備管理",
-        name: "編輯設備",
-        description: "Edit Devices",
-        checked: true,
-      },
-      {
-        id: "device_delete",
-        category: "設備管理",
-        name: "刪除設備",
-        description: "Delete Devices",
-        checked: true,
-      },
-      // User permissions
-      {
-        id: "user_view",
-        category: "用戶權限",
-        name: "查看用戶",
-        description: "View Users",
-        checked: true,
-      },
-      {
-        id: "user_add",
-        category: "用戶權限",
-        name: "新增用戶",
-        description: "Add Users",
-        checked: true,
-      },
-      {
-        id: "user_edit",
-        category: "用戶權限",
-        name: "編輯用戶",
-        description: "Edit Users",
-        checked: true,
-      },
-      {
-        id: "user_delete",
-        category: "用戶權限",
-        name: "刪除用戶",
-        description: "Delete Users",
-        checked: true,
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "操作員",
-    permissions: [
-      // Dashboard permissions
-      {
-        id: "dashboard_view_all",
-        category: "儀表板",
-        name: "查看所有數據",
-        description: "View All Data",
-        checked: true,
-      },
-      {
-        id: "dashboard_export",
-        category: "儀表板",
-        name: "導出報表",
-        description: "Export Reports",
-        checked: false,
-      },
-      // Device management permissions
-      {
-        id: "device_view",
-        category: "設備管理",
-        name: "查看設備",
-        description: "View Devices",
-        checked: true,
-      },
-      {
-        id: "device_add",
-        category: "設備管理",
-        name: "新增設備",
-        description: "Add Devices",
-        checked: false,
-      },
-      {
-        id: "device_edit",
-        category: "設備管理",
-        name: "編輯設備",
-        description: "Edit Devices",
-        checked: false,
-      },
-      {
-        id: "device_delete",
-        category: "設備管理",
-        name: "刪除設備",
-        description: "Delete Devices",
-        checked: false,
-      },
-      // User permissions
-      {
-        id: "user_view",
-        category: "用戶權限",
-        name: "查看用戶",
-        description: "View Users",
-        checked: false,
-      },
-      {
-        id: "user_add",
-        category: "用戶權限",
-        name: "新增用戶",
-        description: "Add Users",
-        checked: false,
-      },
-      {
-        id: "user_edit",
-        category: "用戶權限",
-        name: "編輯用戶",
-        description: "Edit Users",
-        checked: false,
-      },
-      {
-        id: "user_delete",
-        category: "用戶權限",
-        name: "刪除用戶",
-        description: "Delete Users",
-        checked: false,
-      },
-    ],
-  },
-];
-
-// Simulate API delay
-const simulateApiCall = () => delay(500);
+// 轉換 API Member 到 User 類型
+function convertMemberToUser(member: Member): User {
+  const roleNames = member.roles.map((r) => r.name).join(", ");
+  return {
+    id: member.id.toString(),
+    name: member.name,
+    email: member.email,
+    role: roleNames || "無角色",
+    roles: member.roles, // Keep the actual roles array
+    status: member.is_enable ? "enabled" : "disabled",
+    lastLogin: "", // API 不提供此字段
+    avatar: member.name.substring(0, 2).toUpperCase(),
+  };
+}
 
 // User sagas
 function* fetchUsersSaga() {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.fetchUsersSuccess(fakeUsers));
+    const response: Awaited<ReturnType<typeof fetchMembersApi>> = yield call(
+      fetchMembersApi
+    );
+    if (response.success && Array.isArray(response.data)) {
+      const users = response.data.map(convertMemberToUser);
+      yield put(actions.fetchUsersSuccess(users));
+    } else {
+      yield put(actions.fetchUsersFailure("Failed to fetch users"));
+    }
   } catch (error) {
+    console.error("Failed to fetch users:", error);
     yield put(actions.fetchUsersFailure("Failed to fetch users"));
   }
 }
 
-function* createUserSaga(action: any) {
+function* createUserSaga(action: ReturnType<typeof actions.createUser>) {
   try {
-    yield call(simulateApiCall);
-    const newUser: User = {
-      ...action.payload,
-      id: Date.now().toString(),
-      lastLogin: formatTimestamp(new Date()),
-      avatar: action.payload.name.substring(0, 2).toUpperCase(),
+    const userData = action.payload as any;
+
+    // Prepare create request
+    const createRequest: MemberCreateRequest = {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      is_enable: userData.status === "enabled",
+      role_ids: userData.roleIds || [],
     };
-    yield put(actions.createUserSuccess(newUser));
+
+    // Call create API
+    const response: Awaited<ReturnType<typeof createMemberApi>> =
+      yield call(createMemberApi, createRequest);
+
+    if (!response.success) {
+      yield put(actions.createUserFailure("Failed to create user"));
+      return;
+    }
+
+    // Refetch users to get updated data
+    yield put(actions.fetchUsers());
+    yield put(actions.createUserSuccess(response.data as any));
   } catch (error) {
-    console.error("Failed to create user", error);
+    console.error("Failed to create user:", error);
     yield put(actions.createUserFailure("Failed to create user"));
   }
 }
 
-function* updateUserSaga(action: any) {
+function* updateUserSaga(action: ReturnType<typeof actions.updateUser>) {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.updateUserSuccess(action.payload));
+    const userData = action.payload as any;
+    const userId = parseInt(userData.id);
+
+    // Prepare update request
+    const updateRequest: MemberUpdateRequest = {
+      name: userData.name,
+      email: userData.email,
+      is_enable: userData.status === "enabled",
+      role_ids: userData.roleIds || [],
+    };
+
+    // Include password only if provided
+    if (userData.password) {
+      updateRequest.password = userData.password;
+    }
+
+    // Call update API
+    const response: Awaited<ReturnType<typeof updateMemberApi>> =
+      yield call(updateMemberApi, userId, updateRequest);
+
+    if (!response.success) {
+      yield put(actions.updateUserFailure("Failed to update user"));
+      return;
+    }
+
+    // Refetch users to get updated data
+    yield put(actions.fetchUsers());
+    yield put(actions.updateUserSuccess(response.data as any));
   } catch (error) {
-    console.error("Failed to update user", error);
+    console.error("Failed to update user:", error);
     yield put(actions.updateUserFailure("Failed to update user"));
   }
 }
 
-function* deleteUserSaga(action: any) {
+function* deleteUserSaga(action: ReturnType<typeof actions.deleteUser>) {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.deleteUserSuccess(action.payload));
+    // 目前後端不支持刪除用戶，所以暫時只做停用
+    const userId = action.payload;
+    const response: Awaited<ReturnType<typeof updateMemberStatusApi>> =
+      yield call(updateMemberStatusApi, parseInt(userId), false);
+
+    if (response.success) {
+      yield put(actions.deleteUserSuccess(userId));
+    } else {
+      yield put(actions.deleteUserFailure("Failed to delete user"));
+    }
   } catch (error) {
-    console.error("Failed to delete user", error);
+    console.error("Failed to delete user:", error);
     yield put(actions.deleteUserFailure("Failed to delete user"));
   }
 }
 
 // Role sagas
-function* fetchRolesSaga() {
+function* fetchRolesSaga(): any {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.fetchRolesSuccess(fakeRoles));
+    const response: Awaited<ReturnType<typeof fetchRoles>> = yield call(
+      fetchRoles
+    );
+    if (response.success && Array.isArray(response.data)) {
+      // 轉換為前端需要的格式
+      const roles: Role[] = response.data.map((role: any) => ({
+        id: role.id,
+        name: role.title,
+        permissions: [], // 權限暫時為空，之後可以通過 GetRolePowers API 獲取
+      }));
+      yield put(actions.fetchRolesSuccess(roles));
+    } else {
+      yield put(actions.fetchRolesFailure("Failed to fetch roles"));
+    }
   } catch (error) {
-    console.error("Failed to fetch roles", error);
+    console.error("Failed to fetch roles:", error);
     yield put(actions.fetchRolesFailure("Failed to fetch roles"));
   }
 }
 
-function* createRoleSaga(action: any) {
+function* createRoleSaga(action: ReturnType<typeof actions.createRole>): any {
   try {
-    yield call(simulateApiCall);
-    const newRole: Role = {
-      ...action.payload,
-      id: Date.now().toString(),
-    };
-    yield put(actions.createRoleSuccess(newRole));
+    const roleData = action.payload;
+    const response: Awaited<ReturnType<typeof createRoleApi>> = yield call(
+      createRoleApi,
+      {
+        title: roleData.name,
+        description: "",
+        sort: 0,
+        is_enable: true
+      }
+    );
+
+    if (response.success && response.data) {
+      const newRole: Role = {
+        id: response.data.id,
+        name: response.data.title,
+        permissions: []
+      };
+      yield put(actions.createRoleSuccess(newRole));
+    } else {
+      yield put(actions.createRoleFailure("Failed to create role"));
+    }
   } catch (error) {
-    console.error("Failed to create role", error);
+    console.error("Failed to create role:", error);
     yield put(actions.createRoleFailure("Failed to create role"));
   }
 }
 
-function* updateRoleSaga(action: any) {
+function* updateRoleSaga(action: ReturnType<typeof actions.updateRole>): any {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.updateRoleSuccess(action.payload));
+    const role = action.payload;
+    const response: Awaited<ReturnType<typeof updateRoleApi>> = yield call(
+      updateRoleApi,
+      {
+        id: role.id,
+        title: role.name,
+        description: "",
+        sort: 0,
+        is_enable: true
+      }
+    );
+
+    if (response.success) {
+      yield put(actions.updateRoleSuccess(role));
+    } else {
+      yield put(actions.updateRoleFailure("Failed to update role"));
+    }
   } catch (error) {
-    console.error("Failed to update role", error);
+    console.error("Failed to update role:", error);
     yield put(actions.updateRoleFailure("Failed to update role"));
   }
 }
 
-function* deleteRoleSaga(action: any) {
+function* deleteRoleSaga(action: ReturnType<typeof actions.deleteRole>): any {
   try {
-    yield call(simulateApiCall);
-    yield put(actions.deleteRoleSuccess(action.payload));
+    const roleId = action.payload;
+    const response: Awaited<ReturnType<typeof deleteRoleApi>> = yield call(
+      deleteRoleApi,
+      roleId
+    );
+
+    if (response.success) {
+      yield put(actions.deleteRoleSuccess(roleId));
+    } else {
+      yield put(actions.deleteRoleFailure("Failed to delete role"));
+    }
   } catch (error) {
-    console.error("Failed to delete role", error);
+    console.error("Failed to delete role:", error);
     yield put(actions.deleteRoleFailure("Failed to delete role"));
   }
 }

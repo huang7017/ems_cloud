@@ -156,7 +156,8 @@ type AreaInfo struct {
 	Statistics AreaStatistics          `json:"statistics"`
 	Meters     []MeterInfo             `json:"meters"`
 	Sensors    []TemperatureSensorInfo `json:"sensors"`
-	ACPackages []ACPackageInfo         `json:"ac_packages"` // 冷氣組包資訊
+	ACPackages []ACPackageInfo         `json:"ac_packages"` // Package 冷氣資訊
+	VRFs       []VRFInfo               `json:"vrfs"`        // VRF 系統資訊
 }
 
 type AreaStatistics struct {
@@ -173,9 +174,14 @@ type AreaStatistics struct {
 	MinTemperature float64 `json:"min_temperature"`
 	MaxTemperature float64 `json:"max_temperature"`
 
-	// 設備統計
+	// Package AC 設備統計
 	TotalACPackages int `json:"total_ac_packages"`
-	RunningACCount  int `json:"running_ac_count"`
+	RunningACCount  int `json:"running_ac_count"` // Package 運行中的壓縮機數量
+
+	// VRF 設備統計
+	TotalVRFs           int `json:"total_vrfs"`
+	TotalVRFUnits       int `json:"total_vrf_units"`        // VRF 下的 AC Unit 總數
+	RunningVRFUnitCount int `json:"running_vrf_unit_count"` // VRF 運行中的 Unit 數量
 
 	LastUpdatedAt *time.Time `json:"last_updated_at,omitempty"`
 }
@@ -191,4 +197,19 @@ type CompressorStatus struct {
 	Address      int    `json:"address"`
 	IsRunning    bool   `json:"is_running"`
 	HasError     bool   `json:"has_error"`
+}
+
+// VRF 系統資訊
+type VRFInfo struct {
+	VRFID    string       `json:"vrf_id"`
+	Address  string       `json:"address"`
+	ACUnits  []ACUnitInfo `json:"ac_units"`
+}
+
+type ACUnitInfo struct {
+	UnitID    string  `json:"unit_id"`
+	Name      string  `json:"name"`
+	Location  string  `json:"location"`
+	Number    int     `json:"number"`
+	IsRunning bool    `json:"is_running"` // status: 0=off, 1=on
 }

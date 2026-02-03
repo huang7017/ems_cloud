@@ -1,15 +1,21 @@
+export interface UserRole {
+  id: number;
+  name: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: string; // Display string for table (comma-separated role names)
+  roles: UserRole[]; // Actual role objects for editing
   status: "enabled" | "disabled";
   lastLogin: string;
   avatar?: string;
 }
 
 export interface Role {
-  id: string;
+  id: number;
   name: string;
   permissions: Permission[];
 }

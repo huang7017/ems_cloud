@@ -27,6 +27,27 @@ func NewDashboardHandler(
 	}
 }
 
+// getRoleID - 從 context 中獲取 roleID
+// 優先使用 current_role_id（從 X-Role-ID header 設定）
+// 如果沒有，則從 role_ids 中取第一個（最高權限的角色）
+func (h *DashboardHandler) getRoleID(c *gin.Context) uint {
+	// 優先使用 current_role_id
+	if roleIDValue, exists := c.Get("current_role_id"); exists {
+		if roleID, ok := roleIDValue.(uint); ok {
+			return roleID
+		}
+	}
+
+	// Fallback: 使用 role_ids 中的第一個角色
+	if roleIDsValue, exists := c.Get("role_ids"); exists {
+		if roleIDs, ok := roleIDsValue.([]uint); ok && len(roleIDs) > 0 {
+			return roleIDs[0] // 返回第一個角色（通常是最高權限）
+		}
+	}
+
+	return 0
+}
+
 // GetMeterData - 獲取電表數據
 func (h *DashboardHandler) GetMeterData(c *gin.Context) {
 	// 從 context 中獲取 memberID (由 auth middleware 設置)
@@ -48,6 +69,9 @@ func (h *DashboardHandler) GetMeterData(c *gin.Context) {
 		return
 	}
 
+	// 獲取 roleID
+	roleID := h.getRoleID(c)
+
 	// 綁定請求參數
 	var req dto.DashboardMeterRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -66,7 +90,7 @@ func (h *DashboardHandler) GetMeterData(c *gin.Context) {
 		}
 	}
 
-	response, err := h.dashboardAppService.GetMeterData(memberID, &req)
+	response, err := h.dashboardAppService.GetMeterData(memberID, roleID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{
 			Success: false,
@@ -102,10 +126,13 @@ func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
 		return
 	}
 
+	// 獲取 roleID
+	roleID := h.getRoleID(c)
+
 	// 創建請求對象（雖然目前不需要參數，但保持一致性）
 	req := &dto.DashboardSummaryRequest{}
 
-	response, err := h.dashboardAppService.GetDashboardSummary(memberID, req)
+	response, err := h.dashboardAppService.GetDashboardSummary(memberID, roleID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{
 			Success: false,
@@ -141,6 +168,9 @@ func (h *DashboardHandler) GetTemperatureData(c *gin.Context) {
 		return
 	}
 
+	// 獲取 roleID
+	roleID := h.getRoleID(c)
+
 	// 綁定請求參數
 	var req dto.DashboardTemperatureRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -159,7 +189,7 @@ func (h *DashboardHandler) GetTemperatureData(c *gin.Context) {
 		}
 	}
 
-	response, err := h.dashboardTempService.GetTemperatureData(memberID, &req)
+	response, err := h.dashboardTempService.GetTemperatureData(memberID, roleID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{
 			Success: false,
@@ -195,10 +225,13 @@ func (h *DashboardHandler) GetCompanyList(c *gin.Context) {
 		return
 	}
 
+	// 獲取 roleID
+	roleID := h.getRoleID(c)
+
 	// 創建請求對象
 	req := &dto.DashboardCompanyListRequest{}
 
-	response, err := h.dashboardAppService.GetCompanyList(memberID, req)
+	response, err := h.dashboardAppService.GetCompanyList(memberID, roleID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{
 			Success: false,
@@ -234,6 +267,9 @@ func (h *DashboardHandler) GetAreaList(c *gin.Context) {
 		return
 	}
 
+	// 獲取 roleID
+	roleID := h.getRoleID(c)
+
 	// 綁定請求參數
 	var req dto.DashboardAreaListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -244,7 +280,7 @@ func (h *DashboardHandler) GetAreaList(c *gin.Context) {
 		return
 	}
 
-	response, err := h.dashboardAppService.GetAreaList(memberID, &req)
+	response, err := h.dashboardAppService.GetAreaList(memberID, roleID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{
 			Success: false,
@@ -280,6 +316,9 @@ func (h *DashboardHandler) GetAreaOverview(c *gin.Context) {
 		return
 	}
 
+	// 獲取 roleID
+	roleID := h.getRoleID(c)
+
 	// 綁定請求參數
 	var req dto.DashboardAreaRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -290,7 +329,7 @@ func (h *DashboardHandler) GetAreaOverview(c *gin.Context) {
 		return
 	}
 
-	response, err := h.dashboardAreaService.GetAreaOverview(memberID, &req)
+	response, err := h.dashboardAreaService.GetAreaOverview(memberID, roleID, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{
 			Success: false,

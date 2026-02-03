@@ -33,24 +33,15 @@ func (h *MenuHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: err.Error()})
 		return
 	}
-	memberIDInterface, exists := c.Get("member_id")
+	memberID, exists := c.Get("member_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, dto.APIResponse{Success: false, Error: "Unauthorized"})
 		return
 	}
-	memberIDStr, ok := memberIDInterface.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID type"})
-		return
-	}
-	memberIDUint64, err := strconv.ParseUint(memberIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: "Invalid member ID format"})
-		return
-	}
-	response, err := h.menuAppService.Create(&menu, uint(memberIDUint64))
+	response, err := h.menuAppService.Create(&menu, memberID.(uint))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: err.Error()})
+		return
 	}
 
 	if !response.Success {
@@ -62,19 +53,33 @@ func (h *MenuHandler) Create(c *gin.Context) {
 }
 
 func (h *MenuHandler) Update(c *gin.Context) {
+	// 從 URL 路徑獲取 ID
+	idParam := c.Param("id")
+	parsedID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: "Invalid ID format"})
+		return
+	}
+
 	var menu dto.MenuRequest
 	if err := c.ShouldBindJSON(&menu); err != nil {
 		c.JSON(http.StatusBadRequest, dto.APIResponse{Success: false, Error: err.Error()})
 		return
 	}
+
+	// 使用 URL 中的 ID，而不是 JSON body 中的 ID
+	menu.ID = uint(parsedID)
+
 	memberID, exists := c.Get("member_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, dto.APIResponse{Success: false, Error: "Unauthorized"})
 		return
 	}
+
 	response, err := h.menuAppService.Update(&menu, memberID.(uint))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.APIResponse{Success: false, Error: err.Error()})
+		return
 	}
 
 	if !response.Success {

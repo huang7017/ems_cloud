@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Paper,
@@ -12,118 +12,17 @@ import {
   TextField,
   Box,
   Chip,
-  IconButton,
-  Tooltip,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  Visibility as ViewIcon,
-  Download as DownloadIcon,
 } from "@mui/icons-material";
-
-// 假資料 - 存取記錄
-const fakeAccessRecords = [
-  {
-    id: 1,
-    userId: "user001",
-    userName: "王大明",
-    action: "login",
-    actionName: "登入",
-    ipAddress: "192.168.1.100",
-    userAgent: "Chrome 120.0.0.0",
-    timestamp: "2024-01-15 14:30:25",
-    status: "success",
-    details: "成功登入系統",
-  },
-  {
-    id: 2,
-    userId: "user002",
-    userName: "林小華",
-    action: "logout",
-    actionName: "登出",
-    ipAddress: "192.168.1.101",
-    userAgent: "Firefox 121.0.0.0",
-    timestamp: "2024-01-15 14:25:10",
-    status: "success",
-    details: "正常登出",
-  },
-  {
-    id: 3,
-    userId: "user003",
-    userName: "張明輝",
-    action: "page_access",
-    actionName: "頁面存取",
-    ipAddress: "192.168.1.102",
-    userAgent: "Safari 17.2.0",
-    timestamp: "2024-01-15 14:20:15",
-    status: "success",
-    details: "存取用戶管理頁面",
-  },
-  {
-    id: 4,
-    userId: "user001",
-    userName: "王大明",
-    action: "data_export",
-    actionName: "資料匯出",
-    ipAddress: "192.168.1.100",
-    userAgent: "Chrome 120.0.0.0",
-    timestamp: "2024-01-15 14:15:30",
-    status: "success",
-    details: "匯出用戶資料",
-  },
-  {
-    id: 5,
-    userId: "user004",
-    userName: "李芳華",
-    action: "login",
-    actionName: "登入",
-    ipAddress: "192.168.1.103",
-    userAgent: "Edge 120.0.0.0",
-    timestamp: "2024-01-15 14:10:45",
-    status: "failed",
-    details: "密碼錯誤",
-  },
-  {
-    id: 6,
-    userId: "user002",
-    userName: "林小華",
-    action: "permission_change",
-    actionName: "權限變更",
-    ipAddress: "192.168.1.101",
-    userAgent: "Firefox 121.0.0.0",
-    timestamp: "2024-01-15 14:05:20",
-    status: "success",
-    details: "修改用戶權限設定",
-  },
-  {
-    id: 7,
-    userId: "user003",
-    userName: "張明輝",
-    action: "data_delete",
-    actionName: "資料刪除",
-    ipAddress: "192.168.1.102",
-    userAgent: "Safari 17.2.0",
-    timestamp: "2024-01-15 14:00:10",
-    status: "success",
-    details: "刪除測試資料",
-  },
-  {
-    id: 8,
-    userId: "user001",
-    userName: "王大明",
-    action: "system_config",
-    actionName: "系統設定",
-    ipAddress: "192.168.1.100",
-    userAgent: "Chrome 120.0.0.0",
-    timestamp: "2024-01-15 13:55:30",
-    status: "success",
-    details: "修改系統參數",
-  },
-];
+import { fetchAuditLogsApi } from "../../../../api/auditLog";
+import type { AuditLog } from "../../../../api/auditLog";
 
 const AccessRecordsTab: React.FC = () => {
   const [page, setPage] = useState(0);
@@ -131,28 +30,49 @@ const AccessRecordsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
+  const [records, setRecords] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // 篩選記錄
-  const filteredRecords = fakeAccessRecords.filter((record) => {
-    const matchesSearch =
-      record.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.actionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.ipAddress.includes(searchTerm) ||
-      record.details.toLowerCase().includes(searchTerm.toLowerCase());
+  // 獲取審計日誌
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchAuditLogsApi({
+          limit: rowsPerPage,
+          offset: page * rowsPerPage,
+          status: statusFilter === "all" ? undefined : statusFilter,
+          action: actionFilter === "all" ? undefined : actionFilter,
+        });
 
-    const matchesStatus =
-      statusFilter === "all" || record.status === statusFilter;
-    const matchesAction =
-      actionFilter === "all" || record.action === actionFilter;
+        if (response.success && Array.isArray(response.data)) {
+          setRecords(response.data);
+          // Use pagination total if available, otherwise fall back to data.length
+          setTotalCount((response as any).pagination?.total || response.data.length);
+        }
+      } catch (error) {
+        console.error("Failed to fetch audit logs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return matchesSearch && matchesStatus && matchesAction;
+    fetchLogs();
+  }, [page, rowsPerPage, statusFilter, actionFilter]);
+
+  // 篩選記錄（前端搜索）
+  const filteredRecords = records.filter((record) => {
+    if (!searchTerm) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      record.member_id?.toString().includes(searchLower) ||
+      record.action?.toLowerCase().includes(searchLower) ||
+      record.resource_type?.toLowerCase().includes(searchLower) ||
+      record.ip_address?.includes(searchLower)
+    );
   });
-
-  // 分頁處理
-  const paginatedRecords = filteredRecords.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -166,12 +86,13 @@ const AccessRecordsTab: React.FC = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "success":
+    switch (status?.toUpperCase()) {
+      case "SUCCESS":
         return "success";
-      case "failed":
+      case "FAILURE":
+      case "FAILED":
         return "error";
-      case "warning":
+      case "WARNING":
         return "warning";
       default:
         return "default";
@@ -179,16 +100,44 @@ const AccessRecordsTab: React.FC = () => {
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "success":
+    switch (status?.toUpperCase()) {
+      case "SUCCESS":
         return "成功";
-      case "failed":
+      case "FAILURE":
+      case "FAILED":
         return "失敗";
-      case "warning":
+      case "WARNING":
         return "警告";
       default:
         return "未知";
     }
+  };
+
+  const getActionText = (action: string) => {
+    const actionMap: Record<string, string> = {
+      CREATE: "創建",
+      UPDATE: "更新",
+      DELETE: "刪除",
+      ASSIGN_POWERS: "分配權限",
+      REMOVE_POWERS: "移除權限",
+      ASSIGN_MEMBERS: "分配成員",
+      REMOVE_MEMBERS: "移除成員",
+      UPDATE_STATUS: "更新狀態",
+    };
+    return actionMap[action] || action;
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return date.toLocaleString("zh-TW", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   };
 
   return (
@@ -227,7 +176,7 @@ const AccessRecordsTab: React.FC = () => {
             }}
           >
             <TextField
-              placeholder="搜尋用戶、動作或 IP..."
+              placeholder="搜尋成員、動作或 IP..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -245,9 +194,8 @@ const AccessRecordsTab: React.FC = () => {
                 label="狀態"
               >
                 <MenuItem value="all">全部狀態</MenuItem>
-                <MenuItem value="success">成功</MenuItem>
-                <MenuItem value="failed">失敗</MenuItem>
-                <MenuItem value="warning">警告</MenuItem>
+                <MenuItem value="SUCCESS">成功</MenuItem>
+                <MenuItem value="FAILURE">失敗</MenuItem>
               </Select>
             </FormControl>
             <FormControl sx={{ minWidth: { xs: "100%", sm: 120 } }}>
@@ -258,20 +206,13 @@ const AccessRecordsTab: React.FC = () => {
                 label="動作類型"
               >
                 <MenuItem value="all">全部動作</MenuItem>
-                <MenuItem value="login">登入</MenuItem>
-                <MenuItem value="logout">登出</MenuItem>
-                <MenuItem value="page_access">頁面存取</MenuItem>
-                <MenuItem value="data_export">資料匯出</MenuItem>
-                <MenuItem value="permission_change">權限變更</MenuItem>
-                <MenuItem value="data_delete">資料刪除</MenuItem>
-                <MenuItem value="system_config">系統設定</MenuItem>
+                <MenuItem value="CREATE">創建</MenuItem>
+                <MenuItem value="UPDATE">更新</MenuItem>
+                <MenuItem value="DELETE">刪除</MenuItem>
+                <MenuItem value="ASSIGN_POWERS">分配權限</MenuItem>
+                <MenuItem value="UPDATE_STATUS">更新狀態</MenuItem>
               </Select>
             </FormControl>
-            <Tooltip title="匯出記錄">
-              <IconButton color="primary">
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
           </Box>
         </Box>
       </Paper>
@@ -281,70 +222,82 @@ const AccessRecordsTab: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>用戶</TableCell>
+              <TableCell>成員ID</TableCell>
               <TableCell>動作</TableCell>
+              <TableCell>資源</TableCell>
               <TableCell>IP 位址</TableCell>
               <TableCell>時間</TableCell>
               <TableCell>狀態</TableCell>
-              <TableCell>詳細資訊</TableCell>
-              <TableCell>操作</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedRecords.map((record) => (
-              <TableRow key={record.id} hover>
-                <TableCell>
-                  <Box>
-                    <Typography variant="body2" fontWeight="medium">
-                      {record.userName}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {record.userId}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={record.actionName}
-                    size="small"
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontFamily="monospace">
-                    {record.ipAddress}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">{record.timestamp}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={getStatusText(record.status)}
-                    color={
-                      getStatusColor(record.status) as
-                        | "success"
-                        | "error"
-                        | "warning"
-                        | "default"
-                    }
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                    {record.details}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Tooltip title="查看詳細">
-                    <IconButton size="small">
-                      <ViewIcon />
-                    </IconButton>
-                  </Tooltip>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <CircularProgress size={40} />
                 </TableCell>
               </TableRow>
-            ))}
+            ) : filteredRecords.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    暫無記錄
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredRecords.map((record) => (
+                <TableRow key={record.id} hover>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {record.member_id}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getActionText(record.action)}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" fontWeight="medium">
+                        {record.resource_type}
+                      </Typography>
+                      {record.resource_id && (
+                        <Typography variant="caption" color="text.secondary">
+                          ID: {record.resource_id}
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontFamily="monospace">
+                      {record.ip_address || "-"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {formatDate(record.create_time)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getStatusText(record.status)}
+                      color={
+                        getStatusColor(record.status) as
+                          | "success"
+                          | "error"
+                          | "warning"
+                          | "default"
+                      }
+                      size="small"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -352,7 +305,7 @@ const AccessRecordsTab: React.FC = () => {
       {/* 分頁 */}
       <TablePagination
         component="div"
-        count={filteredRecords.length}
+        count={totalCount}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

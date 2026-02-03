@@ -27,19 +27,27 @@ const SidebarItems = ({
     ? customizer.isCollapse && !customizer.isSidebarHover
     : "";
   const dispatch = useDispatch();
+
   return (
-    <Box sx={{ px: 1 }}>
-      <List sx={{ pt: 0 }} className="sidebarNav">
+    <Box sx={{ px: hideMenu ? 0.5 : 1.5 }}>
+      <List
+        sx={{
+          pt: 0,
+          "& .MuiListItemButton-root": {
+            transition: "all 0.2s ease-in-out",
+          },
+        }}
+        className="sidebarNav"
+      >
         {menuitems.map((item) => {
-          // {/********SubHeader**********/}
+          // SubHeader
           if (item.subheader) {
             return (
               <NavGroup item={item} hideMenu={hideMenu} key={item.subheader} />
             );
-
-            // {/********If Sub Menu**********/}
-            /* eslint no-else-return: "off" */
-          } else if (item.children) {
+          }
+          // If has children (submenu)
+          if (item.children) {
             return (
               <NavCollapse
                 lng={lng}
@@ -52,23 +60,22 @@ const SidebarItems = ({
                 onClick={() => dispatch(actions.toggleMobileSidebar())}
               />
             );
-
-            // {/********If Sub No Menu**********/}
-          } else {
-            return (
-              <NavItem
-                item={item}
-                key={item.id}
-                pathDirect={pathDirect}
-                hideMenu={hideMenu}
-                lng={lng}
-                onClick={() => dispatch(actions.toggleMobileSidebar())}
-              />
-            );
           }
+          // Single item
+          return (
+            <NavItem
+              item={item}
+              key={item.id}
+              pathDirect={pathDirect}
+              hideMenu={hideMenu}
+              lng={lng}
+              onClick={() => dispatch(actions.toggleMobileSidebar())}
+            />
+          );
         })}
       </List>
     </Box>
   );
 };
+
 export default SidebarItems;

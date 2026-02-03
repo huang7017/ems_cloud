@@ -9,6 +9,7 @@ import type {
   DashboardTemperatureResponse,
   DashboardAreaResponse,
 } from "../../api/home/dashboard";
+import type { ACStatusUpdate, VRFStatusUpdate } from "../../hooks/useWebSocket";
 
 export const initialState: DashboardState = {
   // Loading states
@@ -199,6 +200,52 @@ const homeSlice = createSlice({
     // Reset state
     resetDashboard() {
       return initialState;
+    },
+
+    // ==================== SSE Real-time Update Actions ====================
+    // Update AC status from SSE
+    updateACStatus(state, action: PayloadAction<ACStatusUpdate>) {
+      const update = action.payload;
+
+      // Update in areas data
+      if (state.areas?.areas) {
+        for (const area of state.areas.areas) {
+          if (area.ac_packages) {
+            for (const pkg of area.ac_packages) {
+              if (pkg.package_id === update.package_id && pkg.compressors) {
+                for (const comp of pkg.compressors) {
+                  if (comp.compressor_id === update.compressor_id) {
+                    comp.is_running = update.run_status;
+                    comp.has_error = update.error_status;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    // Update VRF status from SSE
+    updateVRFStatus(state, action: PayloadAction<VRFStatusUpdate>) {
+      const update = action.payload;
+
+      // Update in areas data
+      if (state.areas?.areas) {
+        for (const area of state.areas.areas) {
+          if (area.vrfs) {
+            for (const vrf of area.vrfs) {
+              if (vrf.vrf_id === update.vrf_id && vrf.ac_units) {
+                for (const unit of vrf.ac_units) {
+                  if (unit.number === update.ac_number) {
+                    unit.is_running = update.status === 1;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
   },
 });

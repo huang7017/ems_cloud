@@ -3,7 +3,7 @@ export const config = {
   // Backend API configuration
   api: {
     baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
-    timeout: 10000,
+    timeout: 30000, // 30 seconds for large queries
   },
 
   // App configuration

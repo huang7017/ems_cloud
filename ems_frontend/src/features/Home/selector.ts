@@ -269,16 +269,36 @@ export const averageHeatIndexSelector = createSelector(temperaturesSelector, (te
   return count > 0 ? totalHeatIndex / count : null;
 });
 
-// Get total running AC count from areas data
+// Get total running AC count from areas data (Package AC compressors + VRF units)
 export const totalRunningACSelector = createSelector(areasSelector, (areas) => {
   if (!areas) return 0;
-  return areas.areas.reduce((total, area) => total + area.statistics.running_ac_count, 0);
+  return areas.areas.reduce((total, area) => {
+    const packageRunning = area.statistics.running_ac_count || 0;
+    const vrfRunning = area.statistics.running_vrf_unit_count || 0;
+    return total + packageRunning + vrfRunning;
+  }, 0);
 });
 
-// Get total AC packages from areas data
+// Get total AC packages from areas data (Package AC + VRF units)
 export const totalACPackagesSelector = createSelector(areasSelector, (areas) => {
   if (!areas) return 0;
-  return areas.areas.reduce((total, area) => total + area.statistics.total_ac_packages, 0);
+  return areas.areas.reduce((total, area) => {
+    const packages = area.statistics.total_ac_packages || 0;
+    const vrfUnits = area.statistics.total_vrf_units || 0;
+    return total + packages + vrfUnits;
+  }, 0);
+});
+
+// Get total VRF systems count
+export const totalVRFsSelector = createSelector(areasSelector, (areas) => {
+  if (!areas) return 0;
+  return areas.areas.reduce((total, area) => total + (area.statistics.total_vrfs || 0), 0);
+});
+
+// Get total running VRF units count
+export const totalRunningVRFUnitsSelector = createSelector(areasSelector, (areas) => {
+  if (!areas) return 0;
+  return areas.areas.reduce((total, area) => total + (area.statistics.running_vrf_unit_count || 0), 0);
 });
 
 // Check if any data is loading
@@ -329,5 +349,261 @@ export const anyErrorSelector = createSelector(
       temperaturesError ||
       areasError
     );
+  }
+);
+
+// ==================== Temperature Range Selector ====================
+// Get temperature range (min~max) across all sensors
+export interface TemperatureRange {
+  min: number | null;
+  max: number | null;
+  minLocation: string | null;
+  maxLocation: string | null;
+}
+
+export const temperatureRangeSelector = createSelector(
+  [temperaturesSelector, areasSelector],
+  (temperatures, areas): TemperatureRange => {
+    let minTemp: number | null = null;
+    let maxTemp: number | null = null;
+    let minLocation: string | null = null;
+    let maxLocation: string | null = null;
+
+    // From temperatures data
+    if (temperatures) {
+      temperatures.companies.forEach((company) => {
+        company.areas.forEach((area) => {
+          area.sensors.forEach((sensor) => {
+            if (sensor.latest_data) {
+              const temp = sensor.latest_data.temperature;
+              if (minTemp === null || temp < minTemp) {
+                minTemp = temp;
+                minLocation = `${company.company_name} - ${area.area_name}`;
+              }
+              if (maxTemp === null || temp > maxTemp) {
+                maxTemp = temp;
+                maxLocation = `${company.company_name} - ${area.area_name}`;
+              }
+            }
+          });
+        });
+      });
+    }
+
+    // Also check areas data for sensor data
+    if (areas?.areas) {
+      areas.areas.forEach((area) => {
+        area.sensors?.forEach((sensor) => {
+          if (sensor.latest_data) {
+            const temp = sensor.latest_data.temperature;
+            if (minTemp === null || temp < minTemp) {
+              minTemp = temp;
+              minLocation = area.area_name;
+            }
+            if (maxTemp === null || temp > maxTemp) {
+              maxTemp = temp;
+              maxLocation = area.area_name;
+            }
+          }
+        });
+      });
+    }
+
+    return { min: minTemp, max: maxTemp, minLocation, maxLocation };
+  }
+);
+
+// ==================== Anomaly Alerts Selector ====================
+// Anomaly types
+export type AnomalyType = 'temperature_high' | 'temperature_low' | 'device_error' | 'device_offline';
+export type AnomalySeverity = 'critical' | 'warning' | 'info';
+
+export interface AnomalyAlert {
+  id: string;
+  type: AnomalyType;
+  severity: AnomalySeverity;
+  title: string;
+  description: string;
+  location: string;
+  value?: number;
+  timestamp?: string;
+}
+
+// Temperature thresholds
+const TEMP_HIGH_CRITICAL = 32; // Critical high temperature
+const TEMP_HIGH_WARNING = 30;  // Warning high temperature
+const TEMP_LOW_WARNING = 18;   // Warning low temperature
+const TEMP_LOW_CRITICAL = 15;  // Critical low temperature
+
+export const anomalyAlertsSelector = createSelector(
+  [temperaturesSelector, areasSelector],
+  (temperatures, areas): AnomalyAlert[] => {
+    const alerts: AnomalyAlert[] = [];
+    let alertId = 0;
+
+    // Check temperature anomalies from temperatures data
+    if (temperatures) {
+      temperatures.companies.forEach((company) => {
+        company.areas.forEach((area) => {
+          area.sensors.forEach((sensor) => {
+            if (sensor.latest_data) {
+              const temp = sensor.latest_data.temperature;
+              const location = `${company.company_name} - ${area.area_name}`;
+
+              if (temp >= TEMP_HIGH_CRITICAL) {
+                alerts.push({
+                  id: `temp-high-${alertId++}`,
+                  type: 'temperature_high',
+                  severity: 'critical',
+                  title: '溫度過高警報',
+                  description: `溫度達到 ${temp.toFixed(1)}°C，超過臨界值 ${TEMP_HIGH_CRITICAL}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              } else if (temp >= TEMP_HIGH_WARNING) {
+                alerts.push({
+                  id: `temp-high-${alertId++}`,
+                  type: 'temperature_high',
+                  severity: 'warning',
+                  title: '溫度偏高',
+                  description: `溫度達到 ${temp.toFixed(1)}°C，超過警戒值 ${TEMP_HIGH_WARNING}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              }
+
+              if (temp <= TEMP_LOW_CRITICAL) {
+                alerts.push({
+                  id: `temp-low-${alertId++}`,
+                  type: 'temperature_low',
+                  severity: 'critical',
+                  title: '溫度過低警報',
+                  description: `溫度降至 ${temp.toFixed(1)}°C，低於臨界值 ${TEMP_LOW_CRITICAL}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              } else if (temp <= TEMP_LOW_WARNING) {
+                alerts.push({
+                  id: `temp-low-${alertId++}`,
+                  type: 'temperature_low',
+                  severity: 'warning',
+                  title: '溫度偏低',
+                  description: `溫度降至 ${temp.toFixed(1)}°C，低於警戒值 ${TEMP_LOW_WARNING}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              }
+            }
+          });
+        });
+      });
+    }
+
+    // Check device errors from areas data
+    if (areas?.areas) {
+      areas.areas.forEach((area) => {
+        // Check Package AC compressor errors
+        area.ac_packages?.forEach((pkg) => {
+          pkg.compressors?.forEach((comp) => {
+            if (comp.has_error) {
+              alerts.push({
+                id: `device-error-${alertId++}`,
+                type: 'device_error',
+                severity: 'critical',
+                title: '設備故障',
+                description: `${pkg.package_name} 壓縮機 ${comp.address || ''} 發生錯誤`,
+                location: area.area_name,
+              });
+            }
+          });
+        });
+
+        // Check temperature sensors from areas data
+        area.sensors?.forEach((sensor) => {
+          if (sensor.latest_data) {
+            const temp = sensor.latest_data.temperature;
+            const location = area.area_name;
+
+            // Only add if not already added from temperatures data
+            const alreadyAdded = alerts.some(a =>
+              a.location.includes(area.area_name) &&
+              a.value === temp &&
+              (a.type === 'temperature_high' || a.type === 'temperature_low')
+            );
+
+            if (!alreadyAdded) {
+              if (temp >= TEMP_HIGH_CRITICAL) {
+                alerts.push({
+                  id: `temp-high-${alertId++}`,
+                  type: 'temperature_high',
+                  severity: 'critical',
+                  title: '溫度過高警報',
+                  description: `溫度達到 ${temp.toFixed(1)}°C，超過臨界值 ${TEMP_HIGH_CRITICAL}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              } else if (temp >= TEMP_HIGH_WARNING) {
+                alerts.push({
+                  id: `temp-high-${alertId++}`,
+                  type: 'temperature_high',
+                  severity: 'warning',
+                  title: '溫度偏高',
+                  description: `溫度達到 ${temp.toFixed(1)}°C，超過警戒值 ${TEMP_HIGH_WARNING}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              }
+
+              if (temp <= TEMP_LOW_CRITICAL) {
+                alerts.push({
+                  id: `temp-low-${alertId++}`,
+                  type: 'temperature_low',
+                  severity: 'critical',
+                  title: '溫度過低警報',
+                  description: `溫度降至 ${temp.toFixed(1)}°C，低於臨界值 ${TEMP_LOW_CRITICAL}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              } else if (temp <= TEMP_LOW_WARNING) {
+                alerts.push({
+                  id: `temp-low-${alertId++}`,
+                  type: 'temperature_low',
+                  severity: 'warning',
+                  title: '溫度偏低',
+                  description: `溫度降至 ${temp.toFixed(1)}°C，低於警戒值 ${TEMP_LOW_WARNING}°C`,
+                  location,
+                  value: temp,
+                  timestamp: sensor.latest_data.timestamp,
+                });
+              }
+            }
+          }
+        });
+      });
+    }
+
+    // Sort by severity (critical first, then warning, then info)
+    const severityOrder: Record<AnomalySeverity, number> = { critical: 0, warning: 1, info: 2 };
+    return alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+  }
+);
+
+// Get count of alerts by severity
+export const alertCountsSelector = createSelector(
+  anomalyAlertsSelector,
+  (alerts) => {
+    return {
+      critical: alerts.filter(a => a.severity === 'critical').length,
+      warning: alerts.filter(a => a.severity === 'warning').length,
+      info: alerts.filter(a => a.severity === 'info').length,
+      total: alerts.length,
+    };
   }
 );

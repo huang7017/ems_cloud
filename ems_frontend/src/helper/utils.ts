@@ -87,19 +87,46 @@ export const formatDateOnly = (timestamp: string | Date): string => {
  */
 export const formatMonthDay = (timestamp: string | Date): string => {
   if (!timestamp) return '--';
-  
+
   try {
     const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
-    
+
     if (isNaN(date.getTime())) {
       return '--';
     }
-    
+
     // 手动构造 MM/DD 格式，使用浏览器本地时区
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    
+
     return `${month}/${day}`;
+  } catch (error) {
+    return '--';
+  }
+};
+
+/**
+ * 格式化为 YYYY-MM-DD 格式（用于数据聚合的键，支持跨年份正确排序）
+ * 使用浏览器本地时区
+ * @param timestamp - 时间字符串或Date对象
+ * @returns 格式化后的日期字符串 (YYYY-MM-DD)
+ */
+export const formatDateKey = (timestamp: string | Date): string => {
+  if (!timestamp) return '--';
+
+  try {
+    const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+
+    if (isNaN(date.getTime())) {
+      return '--';
+    }
+
+    // 手动构造 YYYY-MM-DD 格式，使用浏览器本地时区
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   } catch (error) {
     return '--';
   }
